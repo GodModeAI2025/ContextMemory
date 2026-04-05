@@ -1,4 +1,4 @@
-# Context Memory — Claude Skill + Interaktiver Kurs
+# Context Memory 
 
 Persistenter Knowledge Graph für Claude mit temporaler Dimension, Konfidenz-Tracking, 6 Export-Formaten und automatischer Qualitätsprüfung.
 
