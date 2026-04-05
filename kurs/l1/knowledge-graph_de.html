@@ -1,1 +1,92 @@
-<!DOCTYPE html><html><head><meta charset=UTF-8><title>Coming Soon</title><style>body{font-family:DM Sans,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#F3EFEB;color:#1A1A2E;text-align:center}.box{max-width:400px;padding:2rem}.badge{font-family:JetBrains Mono,monospace;font-size:.75rem;color:#FE8F11;background:#FFF3E5;padding:.3rem 1rem;border-radius:99px;display:inline-block;margin-bottom:1rem}h1{font-size:1.5rem;margin-bottom:.5rem}p{color:#5C5A6B}a{color:#000099;text-decoration:none;border-bottom:1px dashed #FE8F11}</style></head><body><div class=box><div class=badge>L1 · Vertiefung</div><h1>Wird generiert…</h1><p>Diese Vertiefungsseite wird im nächsten Schritt erzeugt.</p><p><a href='../index_de.html'>← Zurück zum Überblick</a></p></div></body></html>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Knowledge Graph — Context Memory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--color-deep-blue:#000099;--color-impulse-orange:#FE8F11;--color-bg:#FFFFFF;--color-bg-warm:#F3EFEB;--color-bg-code:#000066;--color-text:#1A1A2E;--color-text-secondary:#5C5A6B;--color-text-muted:#6B6778;--color-border:#E4DAD4;--color-surface-warm:#F8F5F2;--color-accent-light:#FFF3E5;--color-success:#84C041;--color-success-light:#EFF7E5;--color-error:#CC0000;--font-display:'Bricolage Grotesque',Georgia,serif;--font-body:'DM Sans',-apple-system,sans-serif;--font-mono:'JetBrains Mono','Consolas',monospace;--content-width:820px;--nav-height:50px;--radius-sm:8px;--radius-md:12px;--radius-full:9999px;--shadow-md:0 4px 12px rgba(0,0,60,.08);--shadow-lg:0 8px 24px rgba(0,0,60,.10);--ease-out:cubic-bezier(.16,1,.3,1)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-snap-type:y proximity;scroll-behavior:smooth}body{font-family:var(--font-body);color:var(--color-text);background:var(--color-bg);line-height:1.6;-webkit-font-smoothing:antialiased}
+.nav-deep{background:rgba(0,0,153,.95);backdrop-filter:blur(12px);border-bottom:2px solid var(--color-impulse-orange);position:fixed;top:0;left:0;right:0;z-index:9999;height:var(--nav-height);display:flex;align-items:center;padding:0 1.5rem;gap:1rem}
+.back-button{display:inline-flex;align-items:center;gap:.4rem;padding:.3rem .75rem;border-radius:var(--radius-full);background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.85);font-size:.85rem;text-decoration:none;transition:all .2s}.back-button:hover{background:rgba(254,143,17,.2);border-color:var(--color-impulse-orange);color:#fff}
+.breadcrumb{display:flex;align-items:center;gap:.4rem;font-size:.85rem;flex-wrap:wrap}.breadcrumb a{color:rgba(255,255,255,.75);text-decoration:none}.breadcrumb a:hover{color:var(--color-impulse-orange)}.breadcrumb-sep{color:rgba(255,255,255,.4)}.breadcrumb-current{color:#fff;font-weight:500}.breadcrumb-level{display:inline-block;background:rgba(254,143,17,.2);color:var(--color-impulse-orange);font-family:var(--font-mono);font-size:.65rem;font-weight:600;padding:1px 5px;border-radius:4px;margin-right:3px}
+.nav-lang{color:#fff;text-decoration:none;font-size:1.2rem;margin-left:auto}
+.module{min-height:100dvh;scroll-snap-align:start;padding:5rem 1.5rem 4rem;display:flex;align-items:center;justify-content:center}.module:nth-child(odd){background:var(--color-bg)}.module:nth-child(even){background:var(--color-bg-warm)}.module-content{max-width:var(--content-width);width:100%}.module-header{margin-bottom:2rem}.module-number{font-family:var(--font-display);font-size:5rem;font-weight:800;color:var(--color-deep-blue);opacity:.1;line-height:1;margin-bottom:-1.2rem}.module-title{font-family:var(--font-display);font-size:clamp(1.5rem,3.5vw,2.2rem);font-weight:700;line-height:1.2}.module-body{font-size:1.02rem;line-height:1.7;color:var(--color-text-secondary)}.module-body p{margin-bottom:1rem}
+.hero{background:linear-gradient(155deg,#00005A 0%,#000081 55%,#001B78 100%);color:#fff;min-height:50dvh;display:flex;align-items:center;justify-content:center;padding:5.5rem 1.5rem 3rem;scroll-snap-align:start;position:relative;overflow:hidden}.hero::before{content:'';position:absolute;top:-50%;right:-20%;width:80%;height:200%;background:radial-gradient(ellipse,rgba(254,143,17,.18) 0%,transparent 72%);pointer-events:none}.hero::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,35,.24) 0%,rgba(0,0,35,.12) 55%,rgba(0,0,35,.2) 100%);pointer-events:none}.hero-content{max-width:700px;position:relative;z-index:1;padding:.9rem 1rem;border-radius:var(--radius-md);background:rgba(0,0,25,.22);backdrop-filter:blur(2px)}.hero-badge{display:inline-block;font-family:var(--font-mono);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#FFD7A2;background:rgba(0,0,30,.42);padding:.25rem .8rem;border-radius:var(--radius-full);margin-bottom:1rem}.hero h1{font-family:var(--font-display);font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;line-height:1.1;margin-bottom:.75rem;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.28)}.hero h1 span{color:#FFBF66}.hero p{font-size:1rem;color:rgba(255,255,255,.95);line-height:1.6}
+.visual-box{background:var(--color-bg-code);border-radius:var(--radius-md);padding:1.5rem;margin:1.5rem 0;color:#fff;font-family:var(--font-mono);font-size:.82rem;line-height:1.8;overflow-x:auto;position:relative}.visual-box::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--color-impulse-orange);border-radius:var(--radius-md) var(--radius-md) 0 0}.hl{color:var(--color-impulse-orange);font-weight:600}.g{color:#84C041}.b{color:#5BE3D6}.d{color:#7B7BA0}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin:1.5rem 0}.card{background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:1.1rem;transition:all .2s}.card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:var(--color-impulse-orange)}.card-icon{font-size:1.3rem;margin-bottom:.4rem}.card-title{font-family:var(--font-display);font-weight:700;font-size:.92rem;margin-bottom:.3rem}.card-desc{font-size:.82rem;color:var(--color-text-secondary);line-height:1.5}
+.quiz{background:var(--color-surface-warm);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:1.5rem;margin:2rem 0}.quiz-question{font-family:var(--font-display);font-weight:700;font-size:1.05rem;margin-bottom:1rem}.quiz-options{display:flex;flex-direction:column;gap:.5rem}.quiz-option{padding:.65rem 1rem;border:1px solid var(--color-border);border-radius:var(--radius-sm);cursor:pointer;transition:all .2s;font-size:.92rem;background:var(--color-bg)}.quiz-option:hover{border-color:var(--color-impulse-orange);background:var(--color-accent-light)}.quiz-option.correct{border-color:var(--color-success);background:var(--color-success-light)}.quiz-option.wrong{border-color:var(--color-error);background:#FFE5E5}.quiz-feedback{margin-top:.75rem;padding:.75rem;border-radius:var(--radius-sm);font-size:.88rem;display:none}
+.sibling-nav{margin-top:3rem;padding-top:2rem;border-top:2px solid var(--color-border)}.sibling-nav-title{font-family:var(--font-mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted);margin-bottom:1rem}.sibling-nav-items{display:flex;flex-wrap:wrap;gap:.5rem}.sibling-nav-link{display:flex;align-items:center;gap:.4rem;padding:.35rem .75rem;border-radius:var(--radius-full);border:1px solid var(--color-border);font-size:.85rem;text-decoration:none;color:var(--color-text-secondary);transition:all .2s}.sibling-nav-link:hover{border-color:var(--color-impulse-orange);color:var(--color-impulse-orange);background:var(--color-accent-light)}.sibling-nav-current{border-color:var(--color-impulse-orange);background:var(--color-impulse-orange);color:#fff}
+.animate-in{opacity:0;transform:translateY(20px);transition:opacity .5s var(--ease-out),transform .5s var(--ease-out)}.animate-in.visible{opacity:1;transform:translateY(0)}
+.level-indicator{display:flex;gap:5px;align-items:center;margin-bottom:.4rem}.level-dot{width:7px;height:7px;border-radius:50%;border:2px solid rgba(255,255,255,.3)}.level-dot-done{background:var(--color-impulse-orange);border-color:var(--color-impulse-orange)}.level-dot-active{background:#fff;border-color:#fff;width:9px;height:9px}
+@media(max-width:600px){.hero h1{font-size:1.6rem}.card-grid{grid-template-columns:1fr}.module{padding:4.5rem 1rem 3rem}}
+</style>
+</head>
+<body>
+<nav class="nav-deep">
+  <a href="../index_de.html" class="back-button" title="Überblick">← Überblick</a>
+  <div class="breadcrumb">
+    <a href="../index_de.html"><span class="breadcrumb-level">L0</span>Überblick</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-current"><span class="breadcrumb-level">L1</span>Knowledge Graph</span>
+  </div>
+  <a href="knowledge-graph_en.html" class="nav-lang" title="English version">🇬🇧</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-content">
+    <div class="level-indicator">
+      <span class="level-dot level-dot-done"></span>
+      <span class="level-dot level-dot-active"></span>
+      <span class="level-dot"></span>
+    </div>
+    <div class="hero-badge">Vertiefung · Knowledge Graph</div>
+    <h1>Wissen <span>verknüpfen</span></h1>
+    <p>22 Relationstypen, Pfadfindung und Kontext-Traversierung — wie der Graph funktioniert.</p>
+  </div>
+</section>
+
+
+<section class="module" data-module="01">
+  <div class="module-content">
+    <div class="module-header animate-in"><div class="module-number">01</div><div class="module-title">5 Kategorien, 22 Relationstypen</div></div>
+    <div class="module-body animate-in"><p>Jede Relation hat eine Richtung und eine automatische Umkehrung. &quot;A hängt ab von B&quot; erzeugt gleichzeitig &quot;B wird benötigt von A&quot;.</p></div>
+    <div class="card-grid animate-in"><div class="card"><div class="card-icon">🔗</div><div class="card-title">Strukturell</div><div class="card-desc">depends_on ↔ required_by<br>part_of ↔ contains</div></div><div class="card"><div class="card-icon">⚡</div><div class="card-title">Kausal</div><div class="card-desc">caused_by ↔ causes<br>fixed_by ↔ fixes</div></div><div class="card"><div class="card-icon">⚙️</div><div class="card-title">Semantisch</div><div class="card-desc">implements, supersedes<br>related_to</div></div><div class="card"><div class="card-icon">📝</div><div class="card-title">Wissen</div><div class="card-desc">validates, contradicts<br>documents, extends</div></div><div class="card"><div class="card-icon">⏩</div><div class="card-title">Workflow</div><div class="card-desc">precedes ↔ follows<br>blocks ↔ blocked_by</div></div></div>
+  </div>
+</section>
+<section class="module" data-module="02">
+  <div class="module-content">
+    <div class="module-header animate-in"><div class="module-number">02</div><div class="module-title">Pfade finden — Wie hängt A mit B zusammen?</div></div>
+    <div class="module-body animate-in"><p>Der Graph findet den kürzesten Weg zwischen zwei beliebigen Nodes. Das zeigt Zusammenhänge, die du nicht sofort siehst.</p></div>
+    <div class="visual-box animate-in"><span class="hl">Du:</span> "Context Memory: Wie hängt der Cache-Bug mit der Buchstruktur zusammen?"<br><br><span class="g">Claude:</span> 🛤️ Pfad (3 Hops):<br>&nbsp;&nbsp;📌 Cache-Bug<br>&nbsp;&nbsp;↓ <span class="hl">verursacht durch</span><br>&nbsp;&nbsp;📌 Multi-Tenant-Entscheidung<br>&nbsp;&nbsp;↓ <span class="b">benötigt von</span><br>&nbsp;&nbsp;📌 API-Architektur<br>&nbsp;&nbsp;↓ <span class="g">dokumentiert</span><br>&nbsp;&nbsp;📌 Buchstruktur</div>
+  </div>
+</section>
+<section class="module" data-module="03">
+  <div class="module-content">
+    <div class="module-header animate-in"><div class="module-number">03</div><div class="module-title">Kontext abrufen — Alles in N Hops</div></div>
+    <div class="module-body animate-in"><p>Bevor du an einem Thema arbeitest, lade den gesamten verwandten Kontext. Tiefe 1 = direkte Nachbarn. Tiefe 2 = auch deren Nachbarn.</p></div>
+    <div class="visual-box animate-in"><span class="hl">Du:</span> "Context Memory: Zeig mir alles was mit der DB-Entscheidung zusammenhängt."<br><br><span class="g">Claude:</span> 🌐 Kontext für dec-001 (2 Hops):<br>&nbsp;&nbsp;●○ arch-001: REST API (architecture)<br>&nbsp;&nbsp;●○ bug-001: Race Condition (bug)<br>&nbsp;&nbsp;●○ pat-001: Repository Pattern (pattern)<br>&nbsp;&nbsp;●● cfg-001: Redis Cache (config) <span class="d">← 2 Hops</span><br>&nbsp;&nbsp;●● les-001: N+1 Query Fix (lesson) <span class="d">← 2 Hops</span></div>
+  </div>
+</section>
+<section class="module" data-module="04">
+  <div class="module-content">
+    <div class="module-header animate-in"><div class="module-number">04</div><div class="module-title">Mermaid — Den Graphen sehen</div></div>
+    <div class="module-body animate-in"><p>Der Export als Mermaid-Diagramm zeigt deinen Knowledge Graph visuell. Farbcodiert nach Typ, verschiedene Pfeilarten je Relation. Öffne es in Obsidian, GitHub oder mermaid.live.</p></div>
+    <div class="visual-box animate-in"><span class="d">graph LR</span><br>&nbsp;&nbsp;<span class="b">dec_001</span>["PostgreSQL"]<span class="hl">:::</span><span class="hl">dec</span><br>&nbsp;&nbsp;<span class="b">arch_001</span>["REST API"]<span class="hl">:::</span><span class="hl">arch</span><br>&nbsp;&nbsp;<span class="b">bug_001</span>["Race Condition"]<span class="hl">:::</span><span class="hl">bug</span><br>&nbsp;&nbsp;arch_001 <span class="g">-->|depends on|</span> dec_001<br>&nbsp;&nbsp;bug_001 <span class="hl">-.->|caused by|</span> dec_001<br>&nbsp;&nbsp;les_001 <span class="b">==>|fixes|</span> bug_001</div>
+  </div>
+</section>
+
+<section class="module" style="min-height:auto;padding:2rem 1.5rem 4rem">
+  <div class="module-content">
+    <nav class="sibling-nav"><div class="sibling-nav-title">Weitere Vertiefungen:</div><div class="sibling-nav-items"><a href="wissen-aufnehmen_de.html" class="sibling-nav-link">Wissen aufnehmen</a><span class="sibling-nav-link sibling-nav-current">Knowledge Graph</span></div></nav>
+  </div>
+</section>
+
+<script>
+const a=new IntersectionObserver(e=>{e.forEach((x,i)=>{if(x.isIntersecting){setTimeout(()=>x.target.classList.add('visible'),i*100);a.unobserve(x.target)}})},{threshold:.15});
+document.querySelectorAll('.animate-in').forEach(el=>a.observe(el));
+document.querySelectorAll('.quiz').forEach(q=>{const c=parseInt(q.dataset.correct);const f=q.querySelector('.quiz-feedback');q.querySelectorAll('.quiz-option').forEach(o=>{o.onclick=()=>{if(q.dataset.answered)return;q.dataset.answered='1';const i=parseInt(o.dataset.idx);if(i===c){o.classList.add('correct');f.textContent='✅ '+'Richtig!';f.style.background='var(--color-success-light)';f.style.color='#1A1A2E'}else{o.classList.add('wrong');q.querySelectorAll('.quiz-option')[c].classList.add('correct');f.textContent='❌ '+'Nicht ganz.';f.style.background='#FFE5E5';f.style.color='#1A1A2E'}f.style.display='block'}})});
+</script>
+</body>
+</html>
