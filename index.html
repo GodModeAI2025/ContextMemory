@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Context Memory - Landingpage</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: #f6efe7;
+      --bg-card: #fffaf5;
+      --text-main: #171726;
+      --text-soft: #585567;
+      --brand-blue: #00389b;
+      --brand-orange: #f28a18;
+      --brand-orange-dark: #d8760f;
+      --line: #e5d8cb;
+      --shadow: 0 14px 34px rgba(0, 39, 110, 0.14);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "DM Sans", sans-serif;
+      color: var(--text-main);
+      background:
+        radial-gradient(circle at 8% 15%, rgba(242, 138, 24, 0.24), transparent 36%),
+        radial-gradient(circle at 88% 10%, rgba(0, 56, 155, 0.2), transparent 34%),
+        linear-gradient(155deg, #fff9f2 0%, var(--bg-main) 55%, #f0e8df 100%);
+    }
+
+    .page {
+      width: min(1040px, 100% - 2rem);
+      margin: 0 auto;
+      padding: 1.1rem 0 2.5rem;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.7rem 0 1rem;
+    }
+
+    .brand {
+      font-family: "Bricolage Grotesque", serif;
+      font-size: clamp(1.1rem, 2.8vw, 1.5rem);
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      color: var(--brand-blue);
+    }
+
+    .repo-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.55rem 0.9rem;
+      border-radius: 999px;
+      background: rgba(0, 56, 155, 0.1);
+      color: var(--brand-blue);
+      text-decoration: none;
+      font-weight: 700;
+      transition: transform 180ms ease, background-color 180ms ease;
+    }
+
+    .repo-link:hover {
+      transform: translateY(-1px);
+      background: rgba(0, 56, 155, 0.16);
+    }
+
+    .hero {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(132deg, #fffaf5 0%, #fff3e5 100%);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      animation: reveal 650ms ease both;
+    }
+
+    .hero-content {
+      position: relative;
+      padding: clamp(1.5rem, 3vw, 2.6rem);
+    }
+
+    .hero-content::before {
+      content: "";
+      position: absolute;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      right: -55px;
+      top: -55px;
+      background: rgba(0, 56, 155, 0.1);
+    }
+
+    .kicker {
+      margin: 0 0 0.9rem;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.76rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--brand-orange-dark);
+    }
+
+    h1 {
+      margin: 0;
+      font-family: "Bricolage Grotesque", serif;
+      font-size: clamp(1.9rem, 6vw, 3.2rem);
+      line-height: 1.04;
+    }
+
+    h1 span {
+      color: var(--brand-blue);
+    }
+
+    .lead {
+      max-width: 62ch;
+      margin: 1rem 0 1.6rem;
+      color: var(--text-soft);
+      font-size: clamp(1rem, 2.4vw, 1.15rem);
+      line-height: 1.58;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.8rem 1.1rem;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 700;
+      transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+    }
+
+    .btn-primary {
+      background: var(--brand-orange);
+      color: #241200;
+      box-shadow: 0 10px 20px rgba(242, 138, 24, 0.32);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      background: #f09b36;
+      box-shadow: 0 13px 24px rgba(242, 138, 24, 0.36);
+    }
+
+    .btn-secondary {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      color: var(--brand-blue);
+    }
+
+    .btn-secondary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0, 30, 90, 0.14);
+      background: #f7f9ff;
+    }
+
+    .quick-links {
+      margin-top: 1.2rem;
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .quick-link {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.85rem 0.95rem;
+      background: var(--bg-card);
+      text-decoration: none;
+      color: var(--text-main);
+      transition: border-color 180ms ease, transform 180ms ease;
+    }
+
+    .quick-link strong {
+      color: var(--brand-blue);
+      font-family: "Bricolage Grotesque", serif;
+      font-size: 1.03rem;
+    }
+
+    .quick-link p {
+      margin: 0.3rem 0 0;
+      color: var(--text-soft);
+      font-size: 0.95rem;
+    }
+
+    .quick-link:hover {
+      border-color: #c4ab95;
+      transform: translateX(4px);
+    }
+
+    .footer-note {
+      margin-top: 1.2rem;
+      color: #6e6978;
+      font-size: 0.9rem;
+    }
+
+    @keyframes reveal {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        width: min(1040px, 100% - 1.2rem);
+      }
+
+      .repo-link {
+        font-size: 0.92rem;
+      }
+
+      .hero-content::before {
+        width: 130px;
+        height: 130px;
+        right: -38px;
+        top: -38px;
+      }
+
+      .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand">Context Memory</div>
+      <a class="repo-link" href="https://github.com/GodModeAI2025/ContextMemory" target="_blank" rel="noopener noreferrer">GitHub Repo</a>
+    </header>
+
+    <main class="hero">
+      <section class="hero-content">
+        <p class="kicker">Landingpage</p>
+        <h1>Wissen strukturieren mit <span>Context Memory</span></h1>
+        <p class="lead">
+          Diese Startseite fuehrt direkt in den deutschen Kurs und bietet die wichtigsten Projekt-Links auf einen Blick.
+        </p>
+
+        <div class="actions">
+          <a class="btn btn-primary" href="kurs/index_de.html">Zum Kurs (Deutsch)</a>
+          <a class="btn btn-secondary" href="https://godmodeai2025.github.io/MarkZimmermann/" target="_blank" rel="noopener noreferrer">Impressum</a>
+        </div>
+
+        <div class="quick-links">
+          <a class="quick-link" href="kurs/index_de.html">
+            <strong>index_de.html</strong>
+            <p>Direkter Einstieg in die deutsche Kursversion.</p>
+          </a>
+          <a class="quick-link" href="https://github.com/GodModeAI2025/ContextMemory" target="_blank" rel="noopener noreferrer">
+            <strong>GitHub: ContextMemory</strong>
+            <p>Quellcode, Historie und weitere Projektinformationen.</p>
+          </a>
+          <a class="quick-link" href="https://godmodeai2025.github.io/MarkZimmermann/" target="_blank" rel="noopener noreferrer">
+            <strong>Impressum</strong>
+            <p>Rechtliche Informationen und Kontakt.</p>
+          </a>
+        </div>
+
+        <p class="footer-note">Stand: April 2026</p>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
