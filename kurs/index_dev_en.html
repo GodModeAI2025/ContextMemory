@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Context Memory — Architecture & Development</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--color-deep-blue:#000099;--color-impulse-orange:#FE8F11;--color-warm-gray:#E4DAD4;--color-bg:#FFFFFF;--color-bg-warm:#F3EFEB;--color-bg-code:#000066;--color-text:#1A1A2E;--color-text-secondary:#5C5A6B;--color-text-muted:#6B6778;--color-border:#E4DAD4;--color-surface-warm:#F8F5F2;--color-accent:#FE8F11;--color-accent-light:#FFF3E5;--color-success:#84C041;--color-success-light:#EFF7E5;--color-error:#CC0000;--font-display:'Bricolage Grotesque',Georgia,serif;--font-body:'DM Sans',-apple-system,sans-serif;--font-mono:'JetBrains Mono','Consolas',monospace;--content-width:820px;--nav-height:50px;--radius-sm:8px;--radius-md:12px;--radius-full:9999px;--shadow-md:0 4px 12px rgba(0,0,60,.08);--shadow-lg:0 8px 24px rgba(0,0,60,.10);--ease-out:cubic-bezier(.16,1,.3,1);--duration-normal:300ms}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-snap-type:y proximity;scroll-behavior:smooth}body{font-family:var(--font-body);color:var(--color-text);background:var(--color-bg);line-height:1.6;-webkit-font-smoothing:antialiased}
+.nav{position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(0,0,153,.95);backdrop-filter:blur(12px);border-bottom:2px solid var(--color-impulse-orange);height:var(--nav-height);display:flex;align-items:center;padding:0 1.5rem;gap:1rem}.nav-title{color:#fff;font-family:var(--font-display);font-weight:700;font-size:.95rem}.nav-dots{display:flex;gap:8px;margin-left:auto}.nav-dot{width:10px;height:10px;border-radius:50%;border:2px solid rgba(255,255,255,.5);background:transparent;cursor:pointer;transition:all .2s}.nav-dot.active{border-color:var(--color-impulse-orange);background:var(--color-impulse-orange)}.nav-dot.visited{background:var(--color-impulse-orange);border-color:var(--color-impulse-orange);opacity:.6}.nav-lang{color:#fff;text-decoration:none;font-size:1.2rem;margin-left:1rem}
+.audience-switch{display:flex;align-items:center;gap:.75rem;padding:.4rem 1.5rem;background:rgba(0,0,153,.85);border-bottom:1px solid rgba(255,255,255,.1);font-size:.85rem;position:fixed;top:var(--nav-height);left:0;right:0;z-index:9998}.audience-switch-label{color:rgba(255,255,255,.85);font-weight:500}.audience-switch-link{color:rgba(255,255,255,.85);text-decoration:none;padding:.2rem .75rem;border-radius:4px;transition:all .2s}.audience-switch-link:hover:not(.audience-switch-current){color:#fff;background:rgba(254,143,17,.2)}.audience-switch-current{color:#fff;background:rgba(254,143,17,.25);border:1px solid var(--color-impulse-orange)}.audience-switch-icon{margin-right:4px}
+.module{min-height:100dvh;scroll-snap-align:start;padding:6rem 1.5rem 4rem;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}.module:nth-child(odd){background:var(--color-bg)}.module:nth-child(even){background:var(--color-bg-warm)}.module-content{max-width:var(--content-width);width:100%;position:relative;z-index:1}.module-header{margin-bottom:2.5rem}.module-number{font-family:var(--font-display);font-size:6rem;font-weight:800;color:var(--color-deep-blue);opacity:.12;line-height:1;margin-bottom:-1.5rem}.module-title{font-family:var(--font-display);font-size:clamp(1.8rem,4vw,2.5rem);font-weight:700;line-height:1.15}.module-body{font-size:1.05rem;line-height:1.7;color:var(--color-text-secondary)}.module-body p{margin-bottom:1rem}
+.hero{background:var(--color-deep-blue);color:#fff;min-height:100dvh;display:flex;align-items:center;justify-content:center;text-align:center;padding:6rem 1.5rem;position:relative;overflow:hidden}.hero::before{content:'';position:absolute;top:-50%;right:-20%;width:80%;height:200%;background:radial-gradient(ellipse,rgba(254,143,17,.08) 0%,transparent 70%);pointer-events:none}.hero-content{max-width:700px;position:relative;z-index:1}.hero-badge{display:inline-block;font-family:var(--font-mono);font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--color-impulse-orange);background:rgba(254,143,17,.15);padding:.3rem 1rem;border-radius:var(--radius-full);margin-bottom:1.5rem}.hero h1{font-family:var(--font-display);font-size:clamp(2.2rem,5vw,3.5rem);font-weight:800;line-height:1.1;margin-bottom:1rem}.hero h1 span{color:var(--color-impulse-orange)}.hero p{font-size:1.15rem;color:rgba(255,255,255,.85);line-height:1.6;margin-bottom:2rem}.hero-stats{display:flex;gap:2rem;justify-content:center;flex-wrap:wrap;margin-top:2rem}.hero-stat{text-align:center}.hero-stat-num{font-family:var(--font-display);font-size:2rem;font-weight:800;color:var(--color-impulse-orange)}.hero-stat-label{font-size:.8rem;color:rgba(255,255,255,.7);margin-top:.25rem}
+.visual-box{background:var(--color-bg-code);border-radius:var(--radius-md);padding:1.5rem;margin:1.5rem 0;color:#fff;font-family:var(--font-mono);font-size:.82rem;line-height:1.8;overflow-x:auto;position:relative}.visual-box::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--color-impulse-orange);border-radius:var(--radius-md) var(--radius-md) 0 0}.visual-box .hl{color:var(--color-impulse-orange);font-weight:600}.visual-box .g{color:#84C041}.visual-box .b{color:#5BE3D6}.visual-box .d{color:#7B7BA0}.visual-box .kw{color:#FEB85C}.visual-box .str{color:#84C041}.visual-box .fn{color:#5BE3D6}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin:1.5rem 0}.card{background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:1.25rem;transition:all .2s var(--ease-out)}.card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:var(--color-impulse-orange)}.card-icon{font-size:1.3rem;margin-bottom:.5rem;font-family:var(--font-mono)}.card-title{font-family:var(--font-display);font-weight:700;font-size:.95rem;margin-bottom:.3rem}.card-desc{font-size:.82rem;color:var(--color-text-secondary);line-height:1.5;font-family:var(--font-mono)}
+.flow{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:1.5rem 0;font-family:var(--font-mono);font-size:.82rem}.flow-step{background:var(--color-deep-blue);color:#fff;padding:.5rem 1rem;border-radius:var(--radius-sm);white-space:nowrap}.flow-arrow{color:var(--color-impulse-orange);font-weight:700;font-size:1.2rem}
+.quiz{background:var(--color-surface-warm);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:1.5rem;margin:2rem 0}.quiz-question{font-family:var(--font-display);font-weight:700;font-size:1.1rem;margin-bottom:1rem}.quiz-options{display:flex;flex-direction:column;gap:.5rem}.quiz-option{padding:.75rem 1rem;border:1px solid var(--color-border);border-radius:var(--radius-sm);cursor:pointer;transition:all .2s;font-size:.95rem;background:var(--color-bg)}.quiz-option:hover{border-color:var(--color-impulse-orange);background:var(--color-accent-light)}.quiz-option.correct{border-color:var(--color-success);background:var(--color-success-light)}.quiz-option.wrong{border-color:var(--color-error);background:#FFE5E5}.quiz-feedback{margin-top:.75rem;padding:.75rem;border-radius:var(--radius-sm);font-size:.9rem;display:none}
+.deep-dive-link{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;margin:2rem 0;background:var(--color-surface-warm);border:1px solid var(--color-border);border-left:4px solid var(--color-impulse-orange);border-radius:var(--radius-md);text-decoration:none;color:var(--color-text);transition:all var(--duration-normal) var(--ease-out)}.deep-dive-link:hover{border-left-color:var(--color-deep-blue);background:var(--color-accent-light);transform:translateX(4px);box-shadow:var(--shadow-md)}.deep-dive-content{display:flex;flex-direction:column;gap:.15rem}.deep-dive-label{font-family:var(--font-mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--color-impulse-orange);font-weight:600}.deep-dive-title{font-family:var(--font-display);font-size:1.05rem;font-weight:600}.deep-dive-desc{font-size:.8rem;color:var(--color-text-secondary)}
+.tip{position:relative;border-bottom:1px dashed var(--color-impulse-orange);cursor:help}.tip .tiptext{visibility:hidden;background:var(--color-bg-code);color:#fff;font-size:.8rem;padding:.5rem .75rem;border-radius:var(--radius-sm);position:fixed;z-index:10000;max-width:280px;line-height:1.4;font-family:var(--font-body);box-shadow:var(--shadow-lg);pointer-events:none;opacity:0;transition:opacity .15s}.tip:hover .tiptext{visibility:visible;opacity:1}
+.animate-in{opacity:0;transform:translateY(24px);transition:opacity .6s var(--ease-out),transform .6s var(--ease-out)}.animate-in.visible{opacity:1;transform:translateY(0)}
+.progress-bar{position:fixed;top:var(--nav-height);left:0;height:3px;background:var(--color-impulse-orange);z-index:9997;transition:width .3s;width:0}
+@media(max-width:600px){.hero h1{font-size:1.8rem}.card-grid{grid-template-columns:1fr}.module{padding:5rem 1rem 3rem}.audience-switch{flex-wrap:wrap;gap:.4rem;padding:.3rem 1rem}.audience-switch-label{width:100%;font-size:.75rem}}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <span class="nav-title">Context Memory · Dev</span>
+  <div class="nav-dots" id="navDots"></div>
+  <a href="index_dev_de.html" class="nav-lang" title="Deutsche Version">🇩🇪</a>
+</nav>
+<div class="audience-switch">
+  <span class="audience-switch-label">Perspective:</span>
+  <a href="index_en.html" class="audience-switch-link"><span class="audience-switch-icon">👤</span> User</a>
+  <span class="audience-switch-link audience-switch-current"><span class="audience-switch-icon">🔧</span> Developer</span>
+</div>
+<div class="progress-bar" id="progressBar"></div>
+
+<section class="hero module" data-module="0">
+  <div class="hero-content">
+    <div class="hero-badge">Skill-Architektur · 14 Scripts · Python</div>
+    <h1>Under the Hood of <span>Context Memory</span></h1>
+    <p>Wie der Skill intern funktioniert: Dateisystem-basierter Knowledge Graph, mehrstufige Suche, Dokument-Extraktion und 6 Export-Formate. Alles in reinem Python ohne Datenbank.</p>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="hero-stat-num">14</div><div class="hero-stat-label">Python Scripts</div></div>
+      <div class="hero-stat"><div class="hero-stat-num">0</div><div class="hero-stat-label">Dependencies *</div></div>
+      <div class="hero-stat"><div class="hero-stat-num">JSON</div><div class="hero-stat-label">Storage Format</div></div>
+      <div class="hero-stat"><div class="hero-stat-num">~2K</div><div class="hero-stat-label">Lines of Code</div></div>
+    </div>
+    <p style="font-size:.75rem;color:rgba(255,255,255,.5);margin-top:1rem">* Nutzt Python-Stdlib + bereits installierte Libs (pypdf, pandas, python-docx, python-pptx, pandoc)</p>
+  </div>
+</section>
+
+<!-- M1: Architektur -->
+<section class="module" data-module="1">
+  <div class="module-content">
+    <div class="module-header animate-in"><div class="module-number">01</div><div class="module-title">Architecture — Files Instead of a Database</div></div>
+    <div class="module-body animate-in">
+      <p>No SQLite, no Redis, no vector DB. Context Memory stores everything as JSON and Markdown in the file system. This makes it portable, inspectable, and trivially debuggable.</p>
+    </div>
+    <div class="visual-box animate-in">
+<span class="d">~/.context-memory/</span>
+├── <span class="hl">mein-projekt/</span>
+│   ├── <span class="b">tree.json</span>       <span class="d">← Baumstruktur mit Parent/Child-Refs</span>
+│   ├── <span class="b">index.json</span>      <span class="d">← Flacher Such-Index: ID→{title,type,tags,relevance,confidence,temporal}</span>
+│   ├── <span class="b">relations.json</span>  <span class="d">← Kanten-Liste: [{from,to,relation,note,created}]</span>
+│   ├── <span class="b">history.json</span>    <span class="d">← Audit-Log, max 500 Einträge, FIFO</span>
+│   └── <span class="g">nodes/</span>
+│       ├── arch-001.md  <span class="d">← Markdown mit YAML-Header (Typ, Relevanz, Confidence, Temporal)</span>
+│       ├── dec-001.md
+│       └── les-001.md
+└── <span class="hl">anderes-projekt/</span>
+    └── ...              <span class="d">← Komplett isolierter Workspace</span>
+    </div>
+
+    <div class="quiz animate-in" data-correct="2">
+      <div class="quiz-question">Warum JSON statt SQLite?</div>
+      <div class="quiz-options">
+        <div class="quiz-option" data-idx="0">Weil JSON schneller ist</div>
+        <div class="quiz-option" data-idx="1">Weil Claude keinen Zugriff auf Datenbanken hat</div>
+        <div class="quiz-option" data-idx="2">Weil es portabel, inspizierbar und ohne externe Dependencies funktioniert</div>
+      </div>
+      <div class="quiz-feedback"></div>
+    </div>
+  </div>
+</section>
+
+<!-- M2: Die 14 Scripts -->
+<section class="module" data-module="2">
+  <div class="module-content">
+    <div class="module-header animate-in"><div class="module-number">02</div><div class="module-title">The Cast — 14 Scripts, One Core Library</div></div>
+    <div class="module-body animate-in"><p>Each script has exactly one job. <span class="tip">cm_core.py<span class="tiptext">Shared Library: Datenstrukturen, Storage-I/O, ID-Generierung, Duplikaterkennung, Tag-Normalisierung, temporale Metadaten.</span></span> ist die gemeinsame Basis — alle anderen importieren daraus.</p></div>
+    <div class="card-grid animate-in">
+      <div class="card"><div class="card-icon">⚙️</div><div class="card-title">cm_core.py</div><div class="card-desc">load/save_index, generate_id, find_similar_nodes, make_temporal</div></div>
+      <div class="card"><div class="card-icon">🚀</div><div class="card-title">cm_init.py</div><div class="card-desc">mkdir + leere JSON-Dateien anlegen</div></div>
+      <div class="card"><div class="card-icon">➕</div><div class="card-title">cm_add.py</div><div class="card-desc">Node erstellen mit Duplikat-Check + temporale Felder + Confidence</div></div>
+      <div class="card"><div class="card-icon">📥</div><div class="card-title">cm_ingest.py</div><div class="card-desc">15+ Formate → Extractor-Dispatch → Splitting → Batch-ID-Gen</div></div>
+      <div class="card"><div class="card-icon">🔍</div><div class="card-title">cm_curate.py</div><div class="card-desc">os.walk + package.json/pyproject Parsing → Auto-Nodes</div></div>
+      <div class="card"><div class="card-icon">🔎</div><div class="card-title">cm_search.py</div><div class="card-desc">Quick(Tags) → Deep(Fulltext) → Relations-Enrichment</div></div>
+      <div class="card"><div class="card-icon">🌳</div><div class="card-title">cm_tree.py</div><div class="card-desc">Rekursive Baumdarstellung mit Box-Drawing-Chars</div></div>
+      <div class="card"><div class="card-icon">🕸️</div><div class="card-title">cm_relate.py</div><div class="card-desc">22 Relationstypen, BFS-Pfadfindung, Graph-Viz</div></div>
+      <div class="card"><div class="card-icon">✏️</div><div class="card-title">cm_update.py</div><div class="card-desc">Partial Update: Titel, Tags, Content, Status, Confidence</div></div>
+      <div class="card"><div class="card-icon">🗑️</div><div class="card-title">cm_delete.py</div><div class="card-desc">Löschen + Kinder-Reparenting auf Root</div></div>
+      <div class="card"><div class="card-icon">🧹</div><div class="card-title">cm_cleanup.py</div><div class="card-desc">Stale-Detection via datetime-Diff + Auto-Mark</div></div>
+      <div class="card"><div class="card-icon">📊</div><div class="card-title">cm_stats.py</div><div class="card-desc">Counter-Aggregation über Index</div></div>
+      <div class="card"><div class="card-icon">📤</div><div class="card-title">cm_export.py</div><div class="card-desc">6 Formate: MD, JSON, JSON-LD, Mermaid, Chunks, Validation</div></div>
+      <div class="card"><div class="card-icon">📥</div><div class="card-title">cm_import.py</div><div class="card-desc">Full Import oder Merge mit Duplikat-Skip</div></div>
+    </div>
+    <a href="l1/script-architecture_dev_en.html" class="deep-dive-link animate-in">
+      <div class="deep-dive-content">
+        <span class="deep-dive-label">Dive deeper</span>
+        <span class="deep-dive-title">Every script in detail — data flows and decisions →</span>
+        <span class="deep-dive-desc">ID generation, duplicate detection, in-memory index for batch ops</span>
+      </div>
+    </a>
+  </div>
+</section>
+
+<!-- M3: Datenfluss -->
+<section class="module" data-module="3">
+  <div class="module-content">
+    <div class="module-header animate-in"><div class="module-number">03</div><div class="module-title">Data Flow — From Document to Knowledge Graph</div></div>
+    <div class="module-body animate-in"><p>Der Ingest-Pfad ist der komplexeste Teil. Ein PDF durchläuft: Typ-Erkennung → Extractor-Dispatch → Content-Splitting → Duplikat-Check → Batch-ID-Generierung → Index+Tree-Update.</p></div>
+    <div class="flow animate-in">
+      <div class="flow-step">Datei</div><span class="flow-arrow">→</span>
+      <div class="flow-step">detect_file_type()</div><span class="flow-arrow">→</span>
+      <div class="flow-step">EXTRACTORS[type]</div><span class="flow-arrow">→</span>
+      <div class="flow-step">split()</div><span class="flow-arrow">→</span>
+      <div class="flow-step">find_similar()</div><span class="flow-arrow">→</span>
+      <div class="flow-step" style="background:var(--color-impulse-orange)">Nodes + Index</div>
+    </div>
+    <div class="visual-box animate-in">
+<span class="d"># Extractor-Dispatch in cm_ingest.py</span>
+<span class="kw">EXTRACTORS</span> = {
+    <span class="str">"pdf"</span>:  extract_pdf,    <span class="d"># pypdf → pdftotext fallback</span>
+    <span class="str">"docx"</span>: extract_docx,   <span class="d"># pandoc → python-docx fallback</span>
+    <span class="str">"xlsx"</span>: extract_xlsx,   <span class="d"># pandas mit engine-auto-detect</span>
+    <span class="str">"pptx"</span>: extract_pptx,   <span class="d"># python-pptx, slides + notes</span>
+    <span class="str">"csv"</span>:  extract_csv,    <span class="d"># pandas + describe()</span>
+    <span class="str">"json"</span>: extract_json,   <span class="d"># Struktur-Analyse bis depth 3</span>
+    <span class="str">"text"</span>: extract_text,   <span class="d"># raw + Markdown-Section-Split</span>
+    <span class="str">"image"</span>: extract_image, <span class="d"># PIL metadata</span>
+    ...
+}
+
+<span class="d"># Kritischer Bug-Fix: Batch-ID-Generierung</span>
+<span class="d"># generate_id() liest normalerweise von Disk.</span>
+<span class="d"># Bei Splits (10 Nodes in einer Schleife) wäre</span>
+<span class="d"># die ID immer identisch → darum: in-memory Index</span>
+node_id = <span class="fn">generate_id</span>(node_type, ws, <span class="kw">index</span>)
+    </div>
+
+    <div class="quiz animate-in" data-correct="0">
+      <div class="quiz-question">Warum braucht generate_id() einen optionalen in-memory Index?</div>
+      <div class="quiz-options">
+        <div class="quiz-option" data-idx="0">Weil bei Batch-Inserts der Disk-Index noch nicht aktualisiert ist und sonst alle IDs gleich wären</div>
+        <div class="quiz-option" data-idx="1">Weil der Index zu groß für den Arbeitsspeicher sein könnte</div>
+        <div class="quiz-option" data-idx="2">Weil es threadsicher sein muss</div>
+      </div>
+      <div class="quiz-feedback"></div>
+    </div>
+  </div>
+</section>
+
+<!-- M4: Suche -->
+<section class="module" data-module="4">
+  <div class="module-content">
+    <div class="module-header animate-in"><div class="module-number">04</div><div class="module-title">Agentic Search — 3 Stages Without a Vector DB</div></div>
+    <div class="module-body animate-in"><p>Keine Embeddings, kein FAISS, kein Cosine Similarity. Stattdessen: gewichtete Tag/Title-Matches, dann Fulltext mit Phrase-Bonus, dann Relations-Anreicherung.</p></div>
+    <div class="visual-box animate-in">
+<span class="d"># Stufe 1: Quick Search (cm_search.py)</span>
+score = <span class="kw">0.0</span>
+tag_matches = query_words & tags        <span class="d"># × 3.0 Gewicht</span>
+title_matches = query_words & title_words <span class="d"># × 2.0 Gewicht</span>
+substring_matches ...                    <span class="d"># × 1.0 / 0.5</span>
+score *= (<span class="kw">1</span> + relevance_boost * <span class="kw">0.2</span>)  <span class="d"># critical → +30%</span>
+
+<span class="d"># Stufe 2: Deep Search — nur wenn Quick < limit</span>
+<span class="kw">for</span> qw <span class="kw">in</span> query_words:
+    count = content_lower.<span class="fn">count</span>(qw)
+    score += <span class="fn">min</span>(count, <span class="kw">5</span>) * <span class="kw">0.5</span>    <span class="d"># Diminishing returns</span>
+
+<span class="d"># Stufe 3: Relations (mit --with-relations)</span>
+rels = <span class="fn">get_node_relations</span>(ws, result_id)
+<span class="d"># Zeigt: wovon hängt der Treffer ab, was behebt er, etc.</span>
+    </div>
+    <a href="l1/search-algorithm_dev_en.html" class="deep-dive-link animate-in">
+      <div class="deep-dive-content">
+        <span class="deep-dive-label">Dive deeper</span>
+        <span class="deep-dive-title">Search algorithm line by line →</span>
+        <span class="deep-dive-desc">Weighting logic, stopword filter, snippet extraction, BFS path finding</span>
+      </div>
+    </a>
+  </div>
+</section>
+
+<!-- M5: Knowledge Graph -->
+<section class="module" data-module="5">
+  <div class="module-content">
+    <div class="module-header animate-in"><div class="module-number">05</div><div class="module-title">Knowledge Graph — Adjacency List in JSON</div></div>
+    <div class="module-body animate-in"><p>Der Graph ist eine einfache Kanten-Liste in <code style="font-family:var(--font-mono);background:var(--color-accent-light);padding:.1rem .3rem;border-radius:3px">relations.json</code>. 22 typisierte Relationstypen, jeder mit automatischer Umkehrung. BFS für Pfadfindung, N-Hop-Traversal für Kontextabruf.</p></div>
+    <div class="visual-box animate-in">
+<span class="d"># relations.json — einfache Edge-Liste</span>
+{
+  <span class="str">"edges"</span>: [
+    {<span class="str">"from"</span>: <span class="str">"arch-001"</span>, <span class="str">"to"</span>: <span class="str">"dec-001"</span>,
+     <span class="str">"relation"</span>: <span class="str">"depends_on"</span>, <span class="str">"note"</span>: <span class="str">"API braucht DB"</span>},
+    ...
+  ]
+}
+
+<span class="d"># BFS-Pfadfindung in cm_relate.py</span>
+<span class="kw">def</span> <span class="fn">find_path</span>(ws, from_id, to_id, max_depth=<span class="kw">6</span>):
+    adj = {}  <span class="d"># Adjazenzliste aus edges bauen</span>
+    <span class="kw">for</span> edge <span class="kw">in</span> edges:
+        adj[edge[<span class="str">"from"</span>]].append((edge[<span class="str">"to"</span>], edge[<span class="str">"relation"</span>]))
+        <span class="d"># Auch reverse traversieren!</span>
+        adj[edge[<span class="str">"to"</span>]].append((edge[<span class="str">"from"</span>], f<span class="str">"~{rel}"</span>))
+    <span class="d"># Standard-BFS mit visited-Set</span>
+    queue = deque([(from_id, [(from_id, None)])])
+    </div>
+  </div>
+</section>
+
+<!-- M6: Export-Pipeline -->
+<section class="module" data-module="6">
+  <div class="module-content">
+    <div class="module-header animate-in"><div class="module-number">06</div><div class="module-title">Export Pipeline — 6 Formats, 1 Validator</div></div>
+    <div class="module-body animate-in"><p>cm_export.py ist das größte Script. Es validiert automatisch und erzeugt einen Quality Score (0–100) basierend auf 8 Checks. Die Embedding-Chunks sind Markdown-bereinigt und starten mit natürlichsprachlichem Zeitbezug.</p></div>
+    <div class="flow animate-in">
+      <div class="flow-step">validate()</div><span class="flow-arrow">→</span>
+      <div class="flow-step">MD</div><span class="flow-arrow">+</span>
+      <div class="flow-step">JSON</div><span class="flow-arrow">+</span>
+      <div class="flow-step">JSON-LD</div><span class="flow-arrow">+</span>
+      <div class="flow-step">Mermaid</div><span class="flow-arrow">+</span>
+      <div class="flow-step" style="background:var(--color-impulse-orange)">Chunks (JSONL)</div>
+    </div>
+    <div class="visual-box animate-in">
+<span class="d"># Chunk-Bereinigung — kein Markdown, keine Emojis</span>
+clean = re.sub(r<span class="str">'#{1,6}\s+'</span>, <span class="str">''</span>, body)          <span class="d"># Headers</span>
+clean = re.sub(r<span class="str">'\*\*(.+?)\*\*'</span>, r<span class="str">'\1'</span>, clean)  <span class="d"># Bold</span>
+clean = re.sub(r<span class="str">'\[\[(.+?)\]\]'</span>, r<span class="str">'\1'</span>, clean) <span class="d"># Wikilinks</span>
+clean = re.sub(r<span class="str">'[🏗️🧩⚖️💡⚙️...]'</span>, <span class="str">''</span>, clean)     <span class="d"># Emojis</span>
+
+<span class="d"># Zeitkontext als natürliche Sprache voranstellen</span>
+<span class="kw">if</span> temporal.get(<span class="str">"source_date"</span>):
+    time_prefix = f<span class="str">"As of {temporal['source_date']}: "</span>
+
+chunk_text = f<span class="str">"{time_prefix}{title}. {clean}"</span>
+    </div>
+    <div class="quiz animate-in" data-correct="1">
+      <div class="quiz-question">Warum werden Emojis aus den Embedding-Chunks entfernt?</div>
+      <div class="quiz-options">
+        <div class="quiz-option" data-idx="0">Weil Emojis zu viele Tokens verbrauchen</div>
+        <div class="quiz-option" data-idx="1">Weil Embedding-Modelle sauberen Text ohne Formatierungs-Artefakte brauchen</div>
+        <div class="quiz-option" data-idx="2">Weil JSON keine Emojis unterstützt</div>
+      </div>
+      <div class="quiz-feedback"></div>
+    </div>
+  </div>
+</section>
+
+<!-- M7: Das große Ganze -->
+<section class="module" data-module="7">
+  <div class="module-content">
+    <div class="module-header animate-in"><div class="module-number">07</div><div class="module-title">The Big Picture — and What is Missing</div></div>
+    <div class="module-body animate-in">
+      <p>Context Memory ist ein <span class="tip">Skill<span class="tiptext">Eine Markdown-Datei (SKILL.md) die Claude Anweisungen gibt, plus unterstützende Scripts. Claude liest die SKILL.md und führt die Scripts im Hintergrund aus.</span></span>, kein eigenständiges Tool. Claude liest die SKILL.md, versteht den Workflow und ruft die Scripts über bash auf. Der Nutzer sieht nur natürliche Sprache.</p>
+      <p><strong>Was gut gelöst ist:</strong> Dateisystem-Portabilität, Duplikat-Erkennung, in-memory Batch-IDs, saubere Chunk-Bereinigung, 22 Relationstypen mit BFS.</p>
+      <p><strong>Was man erweitern könnte:</strong> Semantic Search via Embeddings (braucht API-Key), Real-time Collaboration (braucht Server), Automatisches Kuratieren bei jedem Gespräch (braucht Hook-Integration), Graph-Visualisierung als interaktives HTML.</p>
+    </div>
+    <div class="visual-box animate-in">
+<span class="d"># Gesamtarchitektur</span>
+<span class="hl">User</span> ──„Context Memory: ..."──→ <span class="b">Claude</span>
+                                    │
+                              liest <span class="g">SKILL.md</span>
+                                    │
+                              ruft <span class="fn">scripts/*.py</span> via bash
+                                    │
+                         ┌──────────┼──────────┐
+                         ↓          ↓          ↓
+                   <span class="b">cm_add</span>    <span class="b">cm_search</span>   <span class="b">cm_export</span>
+                         │          │          │
+                         └──────────┼──────────┘
+                                    ↓
+                         <span class="g">~/.context-memory/projekt/</span>
+                         tree.json + index.json + nodes/ + relations.json
+    </div>
+  </div>
+</section>
+
+<script>
+const modules=document.querySelectorAll('.module'),dotsContainer=document.getElementById('navDots');
+modules.forEach((m,i)=>{const d=document.createElement('div');d.className='nav-dot';d.title=m.querySelector('.module-title')?.textContent.slice(0,30)||'Start';d.onclick=()=>m.scrollIntoView({behavior:'smooth'});dotsContainer.appendChild(d)});
+const progressBar=document.getElementById('progressBar');
+const observer=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){const idx=[...modules].indexOf(e.target);dotsContainer.querySelectorAll('.nav-dot').forEach((d,i)=>{d.className='nav-dot'+(i===idx?' active':i<idx?' visited':'')});progressBar.style.width=((idx+1)/modules.length)*100+'%'}})},{threshold:.4});
+modules.forEach(m=>observer.observe(m));
+const animObs=new IntersectionObserver(entries=>{entries.forEach((e,i)=>{if(e.isIntersecting){setTimeout(()=>e.target.classList.add('visible'),i*120);animObs.unobserve(e.target)}})},{threshold:.15});
+document.querySelectorAll('.animate-in').forEach(el=>animObs.observe(el));
+document.querySelectorAll('.quiz').forEach(quiz=>{const correct=parseInt(quiz.dataset.correct);const feedback=quiz.querySelector('.quiz-feedback');quiz.querySelectorAll('.quiz-option').forEach(opt=>{opt.onclick=()=>{if(quiz.dataset.answered)return;quiz.dataset.answered='1';const idx=parseInt(opt.dataset.idx);if(idx===correct){opt.classList.add('correct');feedback.textContent='✅ Correct!';feedback.style.background='var(--color-success-light)';feedback.style.color='#1A1A2E'}else{opt.classList.add('wrong');quiz.querySelectorAll('.quiz-option')[correct].classList.add('correct');feedback.textContent='❌ Not quite — check the green answer.';feedback.style.background='#FFE5E5';feedback.style.color='#1A1A2E'}feedback.style.display='block'}})});
+document.querySelectorAll('.tip').forEach(tip=>{const tt=tip.querySelector('.tiptext');tip.addEventListener('mouseenter',e=>{const r=tip.getBoundingClientRect();tt.style.left=Math.min(r.left,window.innerWidth-300)+'px';tt.style.top=(r.bottom+8)+'px'})});
+</script>
+</body>
+</html>

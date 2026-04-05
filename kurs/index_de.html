@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Context Memory — Dein Wissensgedächtnis für Claude</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --color-deep-blue:#000099;--color-impulse-orange:#FE8F11;--color-warm-gray:#E4DAD4;
+  --color-bg:#FFFFFF;--color-bg-warm:#F3EFEB;--color-bg-code:#000066;
+  --color-text:#1A1A2E;--color-text-secondary:#5C5A6B;--color-text-muted:#6B6778;
+  --color-border:#E4DAD4;--color-surface-warm:#F8F5F2;
+  --color-accent:#FE8F11;--color-accent-hover:#E57D00;--color-accent-light:#FFF3E5;
+  --color-success:#84C041;--color-success-light:#EFF7E5;
+  --color-error:#CC0000;--color-info:#1195EB;
+  --font-display:'Bricolage Grotesque',Georgia,serif;
+  --font-body:'DM Sans',-apple-system,sans-serif;
+  --font-mono:'JetBrains Mono','Consolas',monospace;
+  --content-width:820px;--nav-height:50px;
+  --radius-sm:8px;--radius-md:12px;--radius-lg:16px;--radius-full:9999px;
+  --shadow-md:0 4px 12px rgba(0,0,60,.08);--shadow-lg:0 8px 24px rgba(0,0,60,.10);
+  --ease-out:cubic-bezier(.16,1,.3,1);--duration-normal:300ms;--stagger-delay:120ms;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-snap-type:y proximity;scroll-behavior:smooth}
+body{font-family:var(--font-body);color:var(--color-text);background:var(--color-bg);line-height:1.6;-webkit-font-smoothing:antialiased}
+
+/* NAV */
+.nav{position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(0,0,153,.95);backdrop-filter:blur(12px);border-bottom:2px solid var(--color-impulse-orange);height:var(--nav-height);display:flex;align-items:center;padding:0 1.5rem;gap:1rem}
+.nav-title{color:#fff;font-family:var(--font-display);font-weight:700;font-size:.95rem;white-space:nowrap}
+.nav-dots{display:flex;gap:8px;margin-left:auto}
+.nav-dot{width:10px;height:10px;border-radius:50%;border:2px solid rgba(255,255,255,.5);background:transparent;cursor:pointer;transition:all .2s}
+.nav-dot.active{border-color:var(--color-impulse-orange);background:var(--color-impulse-orange)}
+.nav-dot.visited{background:var(--color-impulse-orange);border-color:var(--color-impulse-orange);opacity:.6}
+.nav-lang{color:#fff;text-decoration:none;font-size:1.2rem;margin-left:1rem}
+.nav-lang:hover{transform:scale(1.2)}
+.audience-switch{display:flex;align-items:center;gap:.75rem;padding:.4rem 1.5rem;background:rgba(0,0,153,.85);border-bottom:1px solid rgba(255,255,255,.1);font-size:.85rem;position:fixed;top:var(--nav-height);left:0;right:0;z-index:9998}
+.audience-switch-label{color:rgba(255,255,255,.85);font-weight:500}
+.audience-switch-link{color:rgba(255,255,255,.85);text-decoration:none;padding:.2rem .75rem;border-radius:4px;transition:all .2s}
+.audience-switch-link:hover:not(.audience-switch-current){color:#fff;background:rgba(254,143,17,.2)}
+.audience-switch-current{color:#fff;background:rgba(254,143,17,.25);border:1px solid var(--color-impulse-orange)}
+.audience-switch-icon{margin-right:4px}
+
+/* MODULES */
+.module{min-height:100dvh;scroll-snap-align:start;padding:6rem 1.5rem 4rem;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.module:nth-child(odd){background:var(--color-bg)}
+.module:nth-child(even){background:var(--color-bg-warm)}
+.module-content{max-width:var(--content-width);width:100%;position:relative;z-index:1}
+.module-header{margin-bottom:2.5rem}
+.module-number{font-family:var(--font-display);font-size:6rem;font-weight:800;color:var(--color-deep-blue);opacity:.12;line-height:1;margin-bottom:-1.5rem;position:relative;z-index:0}
+.module-title{font-family:var(--font-display);font-size:clamp(1.8rem,4vw,2.5rem);font-weight:700;color:var(--color-text);line-height:1.15}
+.module-body{font-size:1.05rem;line-height:1.7;color:var(--color-text-secondary)}
+.module-body p{margin-bottom:1rem}
+
+/* HERO */
+.hero{background:var(--color-deep-blue);color:#fff;min-height:100dvh;display:flex;align-items:center;justify-content:center;text-align:center;padding:6rem 1.5rem;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;right:-20%;width:80%;height:200%;background:radial-gradient(ellipse,rgba(254,143,17,.08) 0%,transparent 70%);pointer-events:none}
+.hero-content{max-width:700px;position:relative;z-index:1}
+.hero-badge{display:inline-block;font-family:var(--font-mono);font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--color-impulse-orange);background:rgba(254,143,17,.15);padding:.3rem 1rem;border-radius:var(--radius-full);margin-bottom:1.5rem}
+.hero h1{font-family:var(--font-display);font-size:clamp(2.2rem,5vw,3.5rem);font-weight:800;line-height:1.1;margin-bottom:1rem}
+.hero h1 span{color:var(--color-impulse-orange)}
+.hero p{font-size:1.15rem;color:rgba(255,255,255,.85);line-height:1.6;margin-bottom:2rem}
+.hero-stats{display:flex;gap:2rem;justify-content:center;flex-wrap:wrap;margin-top:2rem}
+.hero-stat{text-align:center}
+.hero-stat-num{font-family:var(--font-display);font-size:2rem;font-weight:800;color:var(--color-impulse-orange)}
+.hero-stat-label{font-size:.8rem;color:rgba(255,255,255,.7);margin-top:.25rem}
+
+/* VISUAL BLOCKS */
+.visual-box{background:var(--color-bg-code);border-radius:var(--radius-md);padding:1.5rem;margin:1.5rem 0;color:#fff;font-family:var(--font-mono);font-size:.85rem;line-height:1.8;overflow-x:auto;position:relative}
+.visual-box::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--color-impulse-orange);border-radius:var(--radius-md) var(--radius-md) 0 0}
+.visual-box .hl{color:var(--color-impulse-orange);font-weight:600}
+.visual-box .g{color:#84C041}
+.visual-box .b{color:#5BE3D6}
+.visual-box .d{color:#7B7BA0}
+
+/* CARDS */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin:1.5rem 0}
+.card{background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:1.25rem;transition:all .2s var(--ease-out)}
+.card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:var(--color-impulse-orange)}
+.card-icon{font-size:1.5rem;margin-bottom:.5rem}
+.card-title{font-family:var(--font-display);font-weight:700;font-size:1rem;margin-bottom:.4rem}
+.card-desc{font-size:.85rem;color:var(--color-text-secondary);line-height:1.5}
+
+/* FLOW DIAGRAM */
+.flow{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:1.5rem 0;font-family:var(--font-mono);font-size:.85rem}
+.flow-step{background:var(--color-deep-blue);color:#fff;padding:.5rem 1rem;border-radius:var(--radius-sm);white-space:nowrap}
+.flow-arrow{color:var(--color-impulse-orange);font-weight:700;font-size:1.2rem}
+
+/* QUIZ */
+.quiz{background:var(--color-surface-warm);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:1.5rem;margin:2rem 0}
+.quiz-question{font-family:var(--font-display);font-weight:700;font-size:1.1rem;margin-bottom:1rem}
+.quiz-options{display:flex;flex-direction:column;gap:.5rem}
+.quiz-option{padding:.75rem 1rem;border:1px solid var(--color-border);border-radius:var(--radius-sm);cursor:pointer;transition:all .2s;font-size:.95rem;background:var(--color-bg)}
+.quiz-option:hover{border-color:var(--color-impulse-orange);background:var(--color-accent-light)}
+.quiz-option.correct{border-color:var(--color-success);background:var(--color-success-light);color:#1A1A2E}
+.quiz-option.wrong{border-color:var(--color-error);background:#FFE5E5;color:#1A1A2E}
+.quiz-feedback{margin-top:.75rem;padding:.75rem;border-radius:var(--radius-sm);font-size:.9rem;display:none}
+
+/* DEEP DIVE LINK */
+.deep-dive-link{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;margin:2rem 0;background:var(--color-surface-warm);border:1px solid var(--color-border);border-left:4px solid var(--color-impulse-orange);border-radius:var(--radius-md);text-decoration:none;color:var(--color-text);transition:all var(--duration-normal) var(--ease-out)}
+.deep-dive-link:hover{border-left-color:var(--color-deep-blue);background:var(--color-accent-light);transform:translateX(4px);box-shadow:var(--shadow-md)}
+.deep-dive-content{display:flex;flex-direction:column;gap:.15rem}
+.deep-dive-label{font-family:var(--font-mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--color-impulse-orange);font-weight:600}
+.deep-dive-title{font-family:var(--font-display);font-size:1.05rem;font-weight:600}
+.deep-dive-desc{font-size:.8rem;color:var(--color-text-secondary)}
+
+/* TOOLTIP */
+.tip{position:relative;border-bottom:1px dashed var(--color-impulse-orange);cursor:help;color:var(--color-text)}
+.tip .tiptext{visibility:hidden;background:var(--color-bg-code);color:#fff;font-size:.8rem;padding:.5rem .75rem;border-radius:var(--radius-sm);position:fixed;z-index:10000;max-width:280px;line-height:1.4;font-family:var(--font-body);box-shadow:var(--shadow-lg);pointer-events:none;opacity:0;transition:opacity .15s}
+.tip:hover .tiptext{visibility:visible;opacity:1}
+
+/* ANIMATE */
+.animate-in{opacity:0;transform:translateY(24px);transition:opacity .6s var(--ease-out),transform .6s var(--ease-out)}
+.animate-in.visible{opacity:1;transform:translateY(0)}
+
+/* PROGRESS */
+.progress-bar{position:fixed;top:var(--nav-height);left:0;height:3px;background:var(--color-impulse-orange);z-index:9997;transition:width .3s;width:0}
+
+/* RESPONSIVE */
+@media(max-width:600px){
+  .hero h1{font-size:1.8rem}
+  .hero-stats{gap:1rem}
+  .card-grid{grid-template-columns:1fr}
+  .flow{font-size:.75rem}
+  .flow-step{padding:.4rem .7rem}
+  .module{padding:5rem 1rem 3rem}
+  .audience-switch{flex-wrap:wrap;gap:.4rem;padding:.3rem 1rem}
+  .audience-switch-label{width:100%;font-size:.75rem}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <span class="nav-title">Context Memory</span>
+  <div class="nav-dots" id="navDots"></div>
+  <a href="index_en.html" class="nav-lang" title="English version">🇬🇧</a>
+</nav>
+<div class="audience-switch">
+  <span class="audience-switch-label">Perspektive:</span>
+  <span class="audience-switch-link audience-switch-current"><span class="audience-switch-icon">👤</span> Anwender</span>
+  <a href="index_dev_de.html" class="audience-switch-link"><span class="audience-switch-icon">🔧</span> Entwickler</a>
+</div>
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- HERO -->
+<section class="hero module" data-module="0">
+  <div class="hero-content">
+    <div class="hero-badge">Claude Skill · v2.0</div>
+    <h1>Dein Wissen. <span>Dauerhaft.</span></h1>
+    <p>Context Memory gibt Claude ein Langzeitgedächtnis. Speichere Entscheidungen, Recherchen und Projektdetails — und finde sie wieder, wenn du sie brauchst. Über Sessions hinweg.</p>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="hero-stat-num">15+</div><div class="hero-stat-label">Dateiformate</div></div>
+      <div class="hero-stat"><div class="hero-stat-num">22</div><div class="hero-stat-label">Relationstypen</div></div>
+      <div class="hero-stat"><div class="hero-stat-num">6</div><div class="hero-stat-label">Export-Formate</div></div>
+      <div class="hero-stat"><div class="hero-stat-num">∞</div><div class="hero-stat-label">Projekte parallel</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- MODULE 1: Was ist das? -->
+<section class="module" data-module="1">
+  <div class="module-content">
+    <div class="module-header animate-in">
+      <div class="module-number">01</div>
+      <div class="module-title">Claude vergisst alles. Dieser Skill ändert das.</div>
+    </div>
+    <div class="module-body animate-in">
+      <p>Normalerweise startet Claude jede Session bei Null. Deine Architekturentscheidungen, Bug-Fixes, Recherche-Ergebnisse — alles weg. Context Memory ändert das grundlegend.</p>
+      <p>Du sagst Claude einfach, was wichtig ist. Der Skill speichert es in einem <span class="tip">Context Tree<span class="tiptext">Hierarchische Baumstruktur die dein Projektwissen organisiert — nach Typ, Relevanz und Zusammenhängen.</span></span> — und beim nächsten Mal ist alles wieder da.</p>
+    </div>
+    <div class="visual-box animate-in">
+      <span class="d">── Ohne Context Memory ──</span><br>
+      Session 1: „Wir nutzen PostgreSQL" → <span class="hl">gespeichert in Claudes Kopf</span><br>
+      Session 2: „Was nutzen wir nochmal?" → <span style="color:#CC0000">❌ Keine Ahnung</span><br><br>
+      <span class="g">── Mit Context Memory ──</span><br>
+      Session 1: „<span class="hl">Context Memory:</span> Merk dir — wir nutzen PostgreSQL" → <span class="g">✅ dec-001 gespeichert</span><br>
+      Session 2: „<span class="hl">Context Memory:</span> Was nutzen wir?" → <span class="g">✅ PostgreSQL (Entscheidung, kritisch)</span>
+    </div>
+
+    <div class="quiz animate-in" data-correct="1">
+      <div class="quiz-question">Wie sprichst du den Skill an?</div>
+      <div class="quiz-options">
+        <div class="quiz-option" data-idx="0">Einfach ganz normal reden, Claude erkennt es automatisch</div>
+        <div class="quiz-option" data-idx="1">„Context Memory: …" und dann dein Anliegen</div>
+        <div class="quiz-option" data-idx="2">Einen speziellen Slash-Command eingeben</div>
+      </div>
+      <div class="quiz-feedback"></div>
+    </div>
+  </div>
+</section>
+
+<!-- MODULE 2: Was kann ich speichern? -->
+<section class="module" data-module="2">
+  <div class="module-content">
+    <div class="module-header animate-in">
+      <div class="module-number">02</div>
+      <div class="module-title">Alles was wichtig ist — aus Gesprächen und Dateien</div>
+    </div>
+    <div class="module-body animate-in">
+      <p>Du kannst Claude Wissen diktieren — oder ganze Dateien verfüttern. Der Skill extrahiert die Inhalte und organisiert sie automatisch.</p>
+    </div>
+
+    <div class="card-grid animate-in">
+      <div class="card">
+        <div class="card-icon">💬</div>
+        <div class="card-title">Aus dem Gespräch</div>
+        <div class="card-desc">„Context Memory: Merk dir, dass wir uns für PostgreSQL entschieden haben."</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📄</div>
+        <div class="card-title">Aus PDFs & Word</div>
+        <div class="card-desc">Lade eine Datei hoch und sag „Nimm das in die Wissensbasis auf."</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <div class="card-title">Aus Excel & CSV</div>
+        <div class="card-desc">Spalten, Datentypen und Samples werden automatisch als Wissen gespeichert.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎯</div>
+        <div class="card-title">Aus Präsentationen</div>
+        <div class="card-desc">PowerPoint-Slides werden einzeln als Wissenseinheiten extrahiert.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">💻</div>
+        <div class="card-title">Aus Code</div>
+        <div class="card-desc">Claude analysiert deine Codebase und erkennt Struktur, Dependencies und Tests.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🌐</div>
+        <div class="card-title">Markdown, HTML, JSON…</div>
+        <div class="card-desc">Über 15 Formate. Claude erkennt automatisch, wie er splitten soll.</div>
+      </div>
+    </div>
+
+    <a href="l1/wissen-aufnehmen_de.html" class="deep-dive-link animate-in">
+      <div class="deep-dive-content">
+        <span class="deep-dive-label">Mehr erfahren</span>
+        <span class="deep-dive-title">Alle Formate und Splitting-Strategien im Detail →</span>
+        <span class="deep-dive-desc">PDF nach Seiten, Word nach Abschnitten, Excel nach Sheets — wann was sinnvoll ist</span>
+      </div>
+    </a>
+  </div>
+</section>
+
+<!-- MODULE 3: Wie finde ich Wissen wieder? -->
+<section class="module" data-module="3">
+  <div class="module-content">
+    <div class="module-header animate-in">
+      <div class="module-number">03</div>
+      <div class="module-title">Fragen stellen — Antworten bekommen</div>
+    </div>
+    <div class="module-body animate-in">
+      <p>Die <span class="tip">Agentic Search<span class="tiptext">Dreistufige Suche: Erst schneller Match auf Tags und Titel, dann Volltextsuche im Inhalt, dann Relationsanreicherung.</span></span> durchsucht dein gesamtes Wissen — nicht nur Titel, sondern auch Inhalte und Zusammenhänge.</p>
+    </div>
+
+    <div class="flow animate-in">
+      <div class="flow-step">Deine Frage</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step">Quick Search<br><small style="opacity:.7">Tags & Titel</small></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step">Deep Search<br><small style="opacity:.7">Volltextsuche</small></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step" style="background:var(--color-impulse-orange)">Ergebnis<br><small>+ Relationen</small></div>
+    </div>
+
+    <div class="visual-box animate-in">
+      <span class="hl">Du:</span> „Context Memory: Was wissen wir über die Datenbank?"<br><br>
+      <span class="g">Claude:</span> 🔍 3 Treffer:<br>
+      &nbsp;&nbsp;1. ⚡ <span class="b">[dec-001]</span> PostgreSQL als Datenbank <span class="d">(critical, high confidence)</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🕸️ Benötigt von: REST API<br>
+      &nbsp;&nbsp;2. ⚡ <span class="b">[les-001]</span> N+1 Query gelöst <span class="d">(high, medium confidence)</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🕸️ Behebt: Bug bei User-Endpunkt<br>
+      &nbsp;&nbsp;3. ⚡ <span class="b">[pat-001]</span> Repository Pattern <span class="d">(medium, high confidence)</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🕸️ Implementiert: PostgreSQL-Zugriff
+    </div>
+
+    <div class="quiz animate-in" data-correct="2">
+      <div class="quiz-question">Was macht die Suche besonders?</div>
+      <div class="quiz-options">
+        <div class="quiz-option" data-idx="0">Sie durchsucht nur die Titel der gespeicherten Einträge</div>
+        <div class="quiz-option" data-idx="1">Sie nutzt eine Vektor-Datenbank für semantische Ähnlichkeit</div>
+        <div class="quiz-option" data-idx="2">Sie sucht mehrstufig — Tags, Volltext, und zeigt Zusammenhänge zwischen Treffern</div>
+      </div>
+      <div class="quiz-feedback"></div>
+    </div>
+  </div>
+</section>
+
+<!-- MODULE 4: Knowledge Graph -->
+<section class="module" data-module="4">
+  <div class="module-content">
+    <div class="module-header animate-in">
+      <div class="module-number">04</div>
+      <div class="module-title">Wissen verknüpfen — der Knowledge Graph</div>
+    </div>
+    <div class="module-body animate-in">
+      <p>Einzelne Wissensstücke sind gut. Aber die Zusammenhänge dazwischen sind das eigentlich Wertvolle. Context Memory verbindet dein Wissen über 22 <span class="tip">Relationstypen<span class="tiptext">Abhängigkeiten, Kausalität, Widersprüche, Ersetzungen, Workflow-Reihenfolgen — jede Beziehung hat eine Richtung und eine Umkehrung.</span></span>.</p>
+    </div>
+
+    <div class="visual-box animate-in">
+      <span class="hl">Du:</span> „Context Memory: Die Stanford-Studie bestätigt die Interview-Aussagen."<br>
+      <span class="g">Claude:</span> ✅ Relation: arch-003 <span class="b">validiert</span> les-001<br><br>
+      <span class="hl">Du:</span> „Context Memory: Der McKinsey-Report widerspricht der Stanford-Studie."<br>
+      <span class="g">Claude:</span> ✅ Relation: les-002 <span style="color:#FDC83A">widerspricht</span> arch-003<br><br>
+      <span class="hl">Du:</span> „Context Memory: Wie hängt McKinsey mit meiner Buchstruktur zusammen?"<br>
+      <span class="g">Claude:</span> 🛤️ Pfad (3 Hops):<br>
+      &nbsp;&nbsp;McKinsey → <span style="color:#FDC83A">widerspricht</span> → Stanford → <span class="b">validiert</span> → Interview → <span class="g">dokumentiert</span> → Buchstruktur
+    </div>
+
+    <div class="card-grid animate-in">
+      <div class="card"><div class="card-icon">🔗</div><div class="card-title">Strukturell</div><div class="card-desc">hängt ab von, ist Teil von</div></div>
+      <div class="card"><div class="card-icon">⚡</div><div class="card-title">Kausal</div><div class="card-desc">verursacht durch, behoben durch</div></div>
+      <div class="card"><div class="card-icon">✅</div><div class="card-title">Wissen</div><div class="card-desc">bestätigt, widerspricht, dokumentiert</div></div>
+      <div class="card"><div class="card-icon">🔄</div><div class="card-title">Lifecycle</div><div class="card-desc">ersetzt, erweitert, blockiert</div></div>
+    </div>
+
+    <a href="l1/knowledge-graph_de.html" class="deep-dive-link animate-in">
+      <div class="deep-dive-content">
+        <span class="deep-dive-label">Mehr erfahren</span>
+        <span class="deep-dive-title">Alle 22 Relationstypen und Graph-Funktionen →</span>
+        <span class="deep-dive-desc">Pfadfindung, Kontext-Traversierung, Mermaid-Diagramme</span>
+      </div>
+    </a>
+  </div>
+</section>
+
+<!-- MODULE 5: Zeitdimension & Qualität -->
+<section class="module" data-module="5">
+  <div class="module-content">
+    <div class="module-header animate-in">
+      <div class="module-number">05</div>
+      <div class="module-title">Wissen hat ein Verfallsdatum — und eine Sicherheit</div>
+    </div>
+    <div class="module-body animate-in">
+      <p>Nicht jede Information ist gleich sicher. Und „Umsatz 28 Mrd." und „Umsatz 34 Mrd." sind kein Widerspruch — sondern eine <span class="tip">Zeitreihe<span class="tiptext">Jeder Node kann ein Quelldatum, ein Gültigkeitsfenster und eine Zeitkonfidenz tragen. So werden zeitliche Veränderungen sichtbar statt als Fehler behandelt.</span></span>.</p>
+    </div>
+
+    <div class="visual-box animate-in">
+      <span class="hl">Zeitdimension:</span><br>
+      „KI-Adoption 12%" <span class="d">← McKinsey, Q1 2025, Konfidenz: explicit</span><br>
+      „KI-Adoption 23%" <span class="d">← Accenture, Q4 2025, Konfidenz: explicit</span><br>
+      → Kein Widerspruch! <span class="g">Zeitreihe: +11 Prozentpunkte in 9 Monaten</span><br><br>
+      <span class="hl">Konfidenz:</span><br>
+      <span class="b">[bug-002]</span> Memory-Leak im Order-Service<br>
+      &nbsp;&nbsp;Relevanz: <span style="color:#CC0000">critical</span> | Konfidenz: <span style="color:#FDC83A">low</span><br>
+      &nbsp;&nbsp;→ Wichtig, aber noch nicht bestätigt. Sobald bestätigt: <span class="g">Konfidenz → high</span>
+    </div>
+
+    <div class="quiz animate-in" data-correct="1">
+      <div class="quiz-question">Wofür ist die Konfidenz-Angabe gut?</div>
+      <div class="quiz-options">
+        <div class="quiz-option" data-idx="0">Sie bestimmt, wie weit oben ein Treffer in der Suche erscheint</div>
+        <div class="quiz-option" data-idx="1">Sie zeigt, ob eine Information bestätigt oder noch eine Vermutung ist</div>
+        <div class="quiz-option" data-idx="2">Sie legt fest, wie lange ein Wissensblock gespeichert bleibt</div>
+      </div>
+      <div class="quiz-feedback"></div>
+    </div>
+  </div>
+</section>
+
+<!-- MODULE 6: Export & Teilen -->
+<section class="module" data-module="6">
+  <div class="module-content">
+    <div class="module-header animate-in">
+      <div class="module-number">06</div>
+      <div class="module-title">Wissen raustragen — 6 Export-Formate</div>
+    </div>
+    <div class="module-body animate-in">
+      <p>Dein Wissen gehört dir — in jedem Format das du brauchst. Von der lesbaren Projektdokumentation bis zu maschinenlesbaren RAG-Chunks.</p>
+    </div>
+
+    <div class="card-grid animate-in">
+      <div class="card"><div class="card-icon">📝</div><div class="card-title">Markdown</div><div class="card-desc">Lesbare Dokumentation mit Zeitbezügen und Konfidenz. Sofort verschickbar.</div></div>
+      <div class="card"><div class="card-icon">💾</div><div class="card-title">JSON Backup</div><div class="card-desc">Vollständiger Export zum Importieren in andere Sessions oder Geräte.</div></div>
+      <div class="card"><div class="card-icon">🕸️</div><div class="card-title">JSON-LD</div><div class="card-desc">Knowledge Graph mit schema.org-Kontext. Für Neo4j, Gephi und andere Graph-Tools.</div></div>
+      <div class="card"><div class="card-icon">📊</div><div class="card-title">Mermaid</div><div class="card-desc">Visuelles Diagramm. Farbcodiert nach Typ. Direkt in Obsidian oder GitHub renderbar.</div></div>
+      <div class="card"><div class="card-icon">🤖</div><div class="card-title">RAG-Chunks</div><div class="card-desc">Saubere Textblöcke ohne Formatierung. Für LangChain, LlamaIndex, Embeddings.</div></div>
+      <div class="card"><div class="card-icon">✨</div><div class="card-title">Alles auf einmal</div><div class="card-desc">„Context Memory: Exportiere alles in allen Formaten." — 5 Dateien, ein Befehl.</div></div>
+    </div>
+
+    <div class="visual-box animate-in">
+      <span class="hl">Du:</span> „Context Memory: Wie gut ist meine Wissensbasis?"<br><br>
+      <span class="g">Claude:</span> 🔍 Quality Score: <span class="b">92/100</span><br>
+      &nbsp;&nbsp;✅ 7/8 Checks bestanden<br>
+      &nbsp;&nbsp;⚠️ 4 Nodes ohne Zeitdaten — Quelldaten ergänzen?<br><br>
+      <span class="hl">Du:</span> „Context Memory: Exportiere alles als Markdown."<br>
+      <span class="g">Claude:</span> ✅ 34 Nodes exportiert → projekt-wissen.md <span class="d">(Quality: 92/100)</span>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL -->
+<section class="module" data-module="7" style="background:var(--color-deep-blue);color:#fff;text-align:center">
+  <div class="module-content">
+    <div class="module-header animate-in">
+      <div class="module-number" style="color:#fff;opacity:.08">✓</div>
+      <div class="module-title" style="color:#fff">Bereit loszulegen?</div>
+    </div>
+    <div class="module-body animate-in" style="max-width:500px;margin:0 auto">
+      <p style="color:rgba(255,255,255,.85);font-size:1.1rem">Sag einfach:</p>
+      <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:var(--radius-md);padding:1.25rem;margin:1.5rem 0;font-family:var(--font-mono);font-size:1rem;color:var(--color-impulse-orange)">
+        „Context Memory: Leg mir ein Wissensprojekt an."
+      </div>
+      <p style="color:rgba(255,255,255,.65);font-size:.9rem">Installiere den Skill in Claude, und dein Wissen bleibt — für immer.</p>
+    </div>
+  </div>
+</section>
+
+<script>
+// Nav dots
+const modules = document.querySelectorAll('.module');
+const dotsContainer = document.getElementById('navDots');
+modules.forEach((m, i) => {
+  const dot = document.createElement('div');
+  dot.className = 'nav-dot';
+  dot.title = m.querySelector('.module-title')?.textContent.slice(0,30) || 'Start';
+  dot.onclick = () => m.scrollIntoView({behavior:'smooth'});
+  dotsContainer.appendChild(dot);
+});
+
+// Scroll tracking
+const progressBar = document.getElementById('progressBar');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting) {
+      const idx = [...modules].indexOf(e.target);
+      dotsContainer.querySelectorAll('.nav-dot').forEach((d,i) => {
+        d.className = 'nav-dot' + (i === idx ? ' active' : i < idx ? ' visited' : '');
+      });
+      const pct = ((idx + 1) / modules.length) * 100;
+      progressBar.style.width = pct + '%';
+    }
+  });
+}, {threshold: 0.4});
+modules.forEach(m => observer.observe(m));
+
+// Animate on scroll
+const animObserver = new IntersectionObserver(entries => {
+  entries.forEach((e, i) => {
+    if(e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 120);
+      animObserver.unobserve(e.target);
+    }
+  });
+}, {threshold: 0.15});
+document.querySelectorAll('.animate-in').forEach(el => animObserver.observe(el));
+
+// Quiz
+document.querySelectorAll('.quiz').forEach(quiz => {
+  const correct = parseInt(quiz.dataset.correct);
+  const feedback = quiz.querySelector('.quiz-feedback');
+  quiz.querySelectorAll('.quiz-option').forEach(opt => {
+    opt.onclick = () => {
+      if(quiz.dataset.answered) return;
+      quiz.dataset.answered = '1';
+      const idx = parseInt(opt.dataset.idx);
+      if(idx === correct) {
+        opt.classList.add('correct');
+        feedback.textContent = '✅ Richtig!';
+        feedback.style.background = 'var(--color-success-light)';
+        feedback.style.color = '#1A1A2E';
+      } else {
+        opt.classList.add('wrong');
+        quiz.querySelectorAll('.quiz-option')[correct].classList.add('correct');
+        feedback.textContent = '❌ Nicht ganz — schau dir die grün markierte Antwort an.';
+        feedback.style.background = '#FFE5E5';
+        feedback.style.color = '#1A1A2E';
+      }
+      feedback.style.display = 'block';
+    };
+  });
+});
+
+// Tooltip positioning
+document.querySelectorAll('.tip').forEach(tip => {
+  const tt = tip.querySelector('.tiptext');
+  tip.addEventListener('mouseenter', e => {
+    const r = tip.getBoundingClientRect();
+    tt.style.left = Math.min(r.left, window.innerWidth - 300) + 'px';
+    tt.style.top = (r.bottom + 8) + 'px';
+  });
+});
+</script>
+</body>
+</html>
