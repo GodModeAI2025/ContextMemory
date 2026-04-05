@@ -210,6 +210,73 @@
       font-size: 0.9rem;
     }
 
+    .project-details {
+      margin-top: 1.2rem;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(162deg, #fff7ed 0%, #fffdf9 100%);
+      box-shadow: 0 12px 28px rgba(0, 25, 70, 0.1);
+      padding: clamp(1.3rem, 2.7vw, 2rem);
+      animation: reveal 720ms ease both;
+    }
+
+    .project-details h2 {
+      margin: 0;
+      font-family: "Bricolage Grotesque", serif;
+      font-size: clamp(1.45rem, 4.5vw, 2.15rem);
+      color: var(--brand-blue);
+      line-height: 1.08;
+      text-wrap: balance;
+    }
+
+    .project-details p {
+      margin: 0.85rem 0 0;
+      color: var(--text-soft);
+      line-height: 1.63;
+      font-size: 1rem;
+    }
+
+    .project-grid {
+      margin-top: 1.05rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .project-item {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      padding: 0.8rem 0.9rem;
+    }
+
+    .project-item h3 {
+      margin: 0;
+      font-family: "Bricolage Grotesque", serif;
+      font-size: 1.04rem;
+      color: #12377d;
+    }
+
+    .project-item p {
+      margin: 0.4rem 0 0;
+      font-size: 0.95rem;
+      color: #5f5966;
+      line-height: 1.54;
+    }
+
+    .project-flow {
+      margin-top: 1.05rem;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 0.85rem 0.95rem;
+      font-family: "JetBrains Mono", monospace;
+      color: #2d374f;
+      font-size: 0.84rem;
+      line-height: 1.7;
+      overflow-x: auto;
+    }
+
     @keyframes reveal {
       from {
         opacity: 0;
@@ -235,6 +302,10 @@
         height: 130px;
         right: -38px;
         top: -38px;
+      }
+
+      .project-grid {
+        grid-template-columns: 1fr;
       }
 
       .btn {
@@ -281,6 +352,44 @@
         <p class="footer-note">Stand: April 2026</p>
       </section>
     </main>
+
+    <section class="project-details">
+      <h2>Projekt im Detail: Was Context Memory konkret fuer dich loest</h2>
+      <p>
+        Context Memory erweitert Claude um ein dauerhaftes Projektgedaechtnis. Statt wichtige Entscheidungen in einzelnen Chats zu verlieren,
+        bleibt dein Wissen ueber Sessions hinweg strukturiert verfuegbar. Das Projekt verbindet einen dateibasierten Wissensgraphen mit
+        praktischen Workflows fuer Teams, die Architektur, Recherche, Produktdetails und Learnings langfristig nutzbar machen wollen.
+      </p>
+      <p>
+        Die Kernidee ist einfach: Wissen wird als nachvollziehbare Nodes und Beziehungen gespeichert, gezielt angereichert und spaeter
+        ueber semantische Suche schnell wiedergefunden. Dadurch sinkt Wiederholungsaufwand, und neue Sessions starten mit echtem Kontext
+        statt bei Null.
+      </p>
+
+      <div class="project-grid">
+        <article class="project-item">
+          <h3>Persistentes Wissen</h3>
+          <p>Entscheidungen, Notizen und Ergebnisse bleiben nicht im Chat stecken, sondern werden projektweit wiederverwendbar gespeichert.</p>
+        </article>
+        <article class="project-item">
+          <h3>Strukturierter Graph</h3>
+          <p>Nodes, Metadaten und Relations-Typen schaffen Ordnung, Priorisierung und klare Zusammenhaenge zwischen Informationen.</p>
+        </article>
+        <article class="project-item">
+          <h3>Praxisnahe Ingestion</h3>
+          <p>Dokumente, Tabellen und Code koennen aufgenommen und in verwertbare Wissenseinheiten transformiert werden.</p>
+        </article>
+        <article class="project-item">
+          <h3>Agentische Suche</h3>
+          <p>Die Suche kombiniert schnelle Treffer mit inhaltlicher Tiefe und zeigt dir auf Wunsch auch relevante Verknuepfungen an.</p>
+        </article>
+      </div>
+
+      <div class="project-flow">
+        Input aus Projektalltag -> Strukturieren im Context Tree -> Beziehungen anlegen ->
+        Relevanz/Konfidenz pflegen -> Kontextgenaue Wiederverwendung in neuen Sessions
+      </div>
+    </section>
   </div>
 </body>
 </html>
