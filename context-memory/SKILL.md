@@ -156,8 +156,8 @@ python3 /path/to/scripts/cm_update.py --id "arch-001" --content "Neuer Inhalt...
 # Node entfernen
 python3 /path/to/scripts/cm_delete.py --id "arch-001"
 
-# Veraltete Nodes finden
-python3 /path/to/scripts/cm_cleanup.py [--older-than 30] [--status "outdated"]
+# Veraltete Nodes finden (nicht aktualisiert seit N Tagen oder valid_until überschritten)
+python3 /path/to/scripts/cm_cleanup.py [--older-than 30] [--status "outdated"] [--auto-mark]
 
 # Statistiken anzeigen
 python3 /path/to/scripts/cm_stats.py
@@ -266,3 +266,4 @@ python3 /path/to/scripts/cm_relate.py --types
 - **Encoding**: Alle Dateien UTF-8, Sonderzeichen in Tags werden normalisiert
 - **Fehlende Dateien**: Robuste Fehlerbehandlung wenn Nodes referenziert aber nicht gefunden werden
 - **Concurrent Access**: Last-write-wins mit Warnung im History-Log
+- **Abgebrochene Schreibvorgänge**: JSON-Dateien und Nodes werden atomar geschrieben (Temp-Datei + Replace). Ist eine JSON-Datei trotzdem beschädigt, wird sie als `<name>.corrupt-<hash>` gesichert und eine Warnung ausgegeben → Benutzer informieren, bevor weiter geschrieben wird

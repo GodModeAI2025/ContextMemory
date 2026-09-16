@@ -14,14 +14,14 @@ Usage:
 """
 
 import argparse
-import json
 import sys
 from collections import deque
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from cm_core import (
-    get_workspace, ensure_workspace, load_index, add_history_entry, _now
+    get_workspace, ensure_workspace, load_index, add_history_entry, _now,
+    load_json, write_json_atomic
 )
 
 # ─── Relation Types ──────────────────────────────────────────────────
@@ -71,20 +71,12 @@ def _relations_path(ws: Path) -> Path:
 
 def load_relations(ws: Path) -> dict:
     """Load the relations graph."""
-    rpath = _relations_path(ws)
-    if rpath.exists():
-        try:
-            return json.loads(rpath.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            pass
-    return {"edges": [], "meta": {"created": _now(), "updated": _now()}}
+    return load_json(_relations_path(ws), {"edges": [], "meta": {"created": _now(), "updated": _now()}})
 
 
 def save_relations(ws: Path, relations: dict) -> None:
     relations["meta"]["updated"] = _now()
-    _relations_path(ws).write_text(
-        json.dumps(relations, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
+    write_json_atomic(_relations_path(ws), relations)
 
 
 # ─── Core Operations ────────────────────────────────────────────────

@@ -422,6 +422,8 @@ Wissen ohne Zeitbezug erzeugt Widersprüche. „Umsatz 28 Mrd." und „Umsatz 34
 
 Das verhindert, dass Claude alte und neue Zahlen durcheinanderbringt. Bei der Suche werden Treffer mit explizitem Zeitbezug bevorzugt, und bei Widersprüchen sieht man sofort, welcher Wert neuer ist.
 
+Abgelaufene Gültigkeit wird beim Aufräumen erkannt: Aktive Nodes, deren „gültig bis“ in der Vergangenheit liegt, meldet `cm_cleanup.py` als abgelaufen — unabhängig davon, wann sie zuletzt bearbeitet wurden. Mit `--auto-mark` werden sie auf `outdated` gesetzt.
+
 ---
 
 ## Konfidenz — Nicht alles Wissen ist gleich sicher

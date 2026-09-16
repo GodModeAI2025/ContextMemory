@@ -6,7 +6,9 @@ Context Memory Core — Shared data structures, storage, and utilities.
 import json
 import os
 import re
+import sys
 import hashlib
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -46,6 +48,53 @@ def get_workspace(project: Optional[str] = None, base: Optional[str] = None) -> 
     return root / "_default"
 
 
+def write_text_atomic(path: Path, text: str) -> None:
+    """Write a file atomically: temp file in the same directory, then os.replace.
+
+    A crash or full disk mid-write leaves the previous version intact instead of
+    a truncated JSON file.
+    """
+    path = Path(path)
+    fd, tmp_name = tempfile.mkstemp(dir=str(path.parent), prefix=f".{path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(text)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp_name, path)
+    except BaseException:
+        try:
+            os.unlink(tmp_name)
+        except OSError:
+            pass
+        raise
+
+
+def write_json_atomic(path: Path, data: dict) -> None:
+    write_text_atomic(path, json.dumps(data, indent=2, ensure_ascii=False))
+
+
+def load_json(path: Path, default: dict) -> dict:
+    """Load a JSON store file; fall back to `default` if missing.
+
+    A corrupt file is copied to `<name>.corrupt-<content-hash>` before falling back,
+    so the next save cannot silently overwrite the only copy of the data.
+    """
+    path = Path(path)
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return default
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError as exc:
+        backup = path.with_name(f"{path.name}.corrupt-{content_hash(raw)}")
+        if not backup.exists():
+            backup.write_text(raw, encoding="utf-8")
+        print(f"⚠️  {path.name} is corrupt ({exc}). Backup: {backup}", file=sys.stderr)
+        return default
+
+
 def ensure_workspace(ws: Path) -> None:
     """Ensure workspace directories exist."""
     ws.mkdir(parents=True, exist_ok=True)
@@ -54,16 +103,16 @@ def ensure_workspace(ws: Path) -> None:
         fpath = ws / fname
         if not fpath.exists():
             if fname == "tree.json":
-                fpath.write_text(json.dumps({
+                write_json_atomic(fpath, {
                     "project": ws.name,
                     "created": _now(),
                     "updated": _now(),
                     "root_children": []
-                }, indent=2, ensure_ascii=False), encoding="utf-8")
+                })
             elif fname == "index.json":
-                fpath.write_text(json.dumps({"nodes": {}}, indent=2, ensure_ascii=False), encoding="utf-8")
+                write_json_atomic(fpath, {"nodes": {}})
             elif fname == "history.json":
-                fpath.write_text(json.dumps({"entries": []}, indent=2, ensure_ascii=False), encoding="utf-8")
+                write_json_atomic(fpath, {"entries": []})
 
 
 def _now() -> str:
@@ -99,39 +148,31 @@ def generate_id(node_type: str, ws: Path, index: dict = None) -> str:
 
 
 def load_tree(ws: Path) -> dict:
-    try:
-        return json.loads((ws / "tree.json").read_text(encoding="utf-8"))
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {"project": ws.name, "created": _now(), "updated": _now(), "root_children": []}
+    return load_json(ws / "tree.json",
+                     {"project": ws.name, "created": _now(), "updated": _now(), "root_children": []})
 
 
 def save_tree(ws: Path, tree: dict) -> None:
     tree["updated"] = _now()
-    (ws / "tree.json").write_text(json.dumps(tree, indent=2, ensure_ascii=False), encoding="utf-8")
+    write_json_atomic(ws / "tree.json", tree)
 
 
 def load_index(ws: Path) -> dict:
-    try:
-        return json.loads((ws / "index.json").read_text(encoding="utf-8"))
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {"nodes": {}}
+    return load_json(ws / "index.json", {"nodes": {}})
 
 
 def save_index(ws: Path, index: dict) -> None:
-    (ws / "index.json").write_text(json.dumps(index, indent=2, ensure_ascii=False), encoding="utf-8")
+    write_json_atomic(ws / "index.json", index)
 
 
 def load_history(ws: Path) -> dict:
-    try:
-        return json.loads((ws / "history.json").read_text(encoding="utf-8"))
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {"entries": []}
+    return load_json(ws / "history.json", {"entries": []})
 
 
 def save_history(ws: Path, history: dict) -> None:
     # Keep last 500 entries
     history["entries"] = history["entries"][-500:]
-    (ws / "history.json").write_text(json.dumps(history, indent=2, ensure_ascii=False), encoding="utf-8")
+    write_json_atomic(ws / "history.json", history)
 
 
 def add_history_entry(ws: Path, action: str, node_id: str, details: str = "") -> None:
@@ -155,7 +196,7 @@ def load_node(ws: Path, node_id: str) -> Optional[str]:
 
 def save_node(ws: Path, node_id: str, content: str) -> None:
     """Save a node's markdown content."""
-    (ws / "nodes" / f"{node_id}.md").write_text(content, encoding="utf-8")
+    write_text_atomic(ws / "nodes" / f"{node_id}.md", content)
 
 
 def delete_node_file(ws: Path, node_id: str) -> bool:
