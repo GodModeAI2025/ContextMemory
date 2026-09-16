@@ -7,12 +7,11 @@ Usage:
 """
 
 import argparse
-import json
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from cm_core import get_workspace, ensure_workspace, load_tree, list_projects
+from cm_core import get_workspace, ensure_workspace, load_tree, list_projects, write_json_atomic
 
 
 def main():
@@ -49,9 +48,7 @@ def main():
         # Update project name in tree
         if args.project_name:
             tree["project"] = args.project_name
-            (ws / "tree.json").write_text(
-                json.dumps(tree, indent=2, ensure_ascii=False), encoding="utf-8"
-            )
+            write_json_atomic(ws / "tree.json", tree)
         print(f"🚀 Workspace created: {ws}")
         print(f"   Project: {tree.get('project', ws.name)}")
     
