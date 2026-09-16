@@ -122,13 +122,19 @@ def main():
 
 
 def _parse_date(value: str):
-    """Parse an ISO 8601 date or datetime; naive values are treated as UTC."""
+    """Parse an ISO 8601 date or datetime; naive values are treated as UTC.
+
+    A plain date (YYYY-MM-DD) is inclusive: it expires at the end of that day.
+    """
     if not value:
         return None
+    text = str(value).strip()
     try:
-        dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        dt = datetime.fromisoformat(text.replace("Z", "+00:00"))
     except (ValueError, TypeError):
         return None
+    if len(text) == 10:
+        dt += timedelta(days=1)
     return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
 

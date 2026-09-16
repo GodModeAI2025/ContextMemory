@@ -6,6 +6,7 @@ Context Memory Core — Shared data structures, storage, and utilities.
 import json
 import os
 import re
+import stat
 import sys
 import hashlib
 import tempfile
@@ -58,6 +59,9 @@ def write_text_atomic(path: Path, text: str) -> None:
     fd, tmp_name = tempfile.mkstemp(dir=str(path.parent), prefix=f".{path.name}.", suffix=".tmp")
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            # mkstemp creates 0600; keep the permissions of an existing file.
+            if path.exists():
+                os.fchmod(fh.fileno(), stat.S_IMODE(path.stat().st_mode))
             fh.write(text)
             fh.flush()
             os.fsync(fh.fileno())
@@ -82,15 +86,15 @@ def load_json(path: Path, default: dict) -> dict:
     """
     path = Path(path)
     try:
-        raw = path.read_text(encoding="utf-8")
+        raw = path.read_bytes()
     except FileNotFoundError:
         return default
     try:
-        return json.loads(raw)
-    except json.JSONDecodeError as exc:
-        backup = path.with_name(f"{path.name}.corrupt-{content_hash(raw)}")
+        return json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        backup = path.with_name(f"{path.name}.corrupt-{hashlib.md5(raw).hexdigest()[:12]}")
         if not backup.exists():
-            backup.write_text(raw, encoding="utf-8")
+            backup.write_bytes(raw)
         print(f"⚠️  {path.name} is corrupt ({exc}). Backup: {backup}", file=sys.stderr)
         return default
 
