@@ -422,6 +422,29 @@ Wissen ohne Zeitbezug erzeugt Widersprüche. „Umsatz 28 Mrd." und „Umsatz 34
 
 Das verhindert, dass Claude alte und neue Zahlen durcheinanderbringt. Bei der Suche werden Treffer mit explizitem Zeitbezug bevorzugt, und bei Widersprüchen sieht man sofort, welcher Wert neuer ist.
 
+### Zeitgewichtung im Ranking
+
+Die Suche rechnet das Inhaltsdatum in den Score ein: Neueres Wissen wiegt schwerer als älteres, der Bonus halbiert sich alle 365 Tage. Bei gleichem Score entscheidet das Datum, der jüngere Node steht oben. Ein Node von 2025 verdrängt damit keinen Node von 2026 — nur umgekehrt.
+
+| Frage | Antwort |
+|-------|---------|
+| Welches Datum zählt? | In dieser Reihenfolge das erste verwertbare: `source_date`, `valid_from`, `updated`, `created` |
+| Welche Formate? | `2025`, `2025-03`, `2025-03-17` und volle ISO-Zeitstempel. Freitext wie „Q1 2025“ zählt nicht als Datum |
+| Nodes ohne Datum? | Bleiben in den Ergebnissen, werden neutral gewichtet und stehen bei gleichem Score hinter datierten Nodes |
+| Datum in der Zukunft? | Wird wie „heute“ behandelt und kauft kein Extra-Gewicht |
+
+Widersprechen sich zwei Treffer — verknüpft über `supersedes`, `superseded_by` oder `contradicts` —, gewinnt der jüngere. Der ältere wird **nicht gelöscht**: Er bleibt im Ergebnis, rutscht aber direkt hinter den neueren Node und wird als `outdated: outranked by [ID]` ausgewiesen.
+
+```
+1. ⚡ [les-004] KI-Adoption aktualisiert
+   🕐 2025-11-01 (temporal.source_date) | recency: 1.32
+2. ⚡ [les-003] KI-Adoption bei EVUs
+   🕐 2025-03-01 (temporal.source_date) | recency: 1.17
+   ⬇️  outdated: outranked by [les-004]
+```
+
+Die Zeitgewichtung ist mit `python3 context-memory/tests/test_recency.py` getestet (Standardbibliothek, keine Abhängigkeiten).
+
 Abgelaufene Gültigkeit wird beim Aufräumen erkannt: Aktive Nodes, deren „gültig bis“ in der Vergangenheit liegt, meldet `cm_cleanup.py` als abgelaufen — unabhängig davon, wann sie zuletzt bearbeitet wurden. Mit `--auto-mark` werden sie auf `outdated` gesetzt.
 
 ---
