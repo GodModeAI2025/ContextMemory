@@ -142,6 +142,8 @@ Die Suche arbeitet mehrstufig:
 python3 /path/to/scripts/cm_search.py --query "wie funktioniert die Authentifizierung" [--type "architecture"] [--limit 5]
 ```
 
+**Zeitgewichtung:** Das Ranking berücksichtigt das Inhaltsdatum. Das Inhaltsjahr ist dabei eine harte Regel: Ein Node von 2025 steht nie über einem Node von 2026, egal wie gut er die Suchbegriffe trifft. Innerhalb eines Jahres entscheidet der Score, das genaue Datum gibt einen Bonus und bricht Gleichstände zugunsten des jüngeren Nodes. Maßgeblich ist in dieser Reihenfolge `temporal.source_date`, `temporal.valid_from`, `updated`, `created`; Nodes ohne verwertbares Datum bleiben in den Treffern und werden neutral gewichtet. Widersprechen sich zwei Treffer (`supersedes`, `superseded_by`, `contradicts`), steht der ältere nie über dem neueren — er bleibt erhalten und wird als `outdated: outranked by [ID]` markiert.
+
 **Gesamten Context Tree anzeigen:**
 ```bash
 python3 /path/to/scripts/cm_tree.py [--format "detailed"|"compact"|"visual"]
@@ -252,6 +254,7 @@ python3 /path/to/scripts/cm_relate.py --types
 | Aktualisieren | `cm_update.py` |
 | Löschen | `cm_delete.py` |
 | Aufräumen | `cm_cleanup.py` |
+| Tests (Zeitgewichtung) | `python3 tests/test_recency.py` |
 | Statistiken | `cm_stats.py` |
 | Exportieren | `cm_export.py` |
 | Importieren | `cm_import.py` |

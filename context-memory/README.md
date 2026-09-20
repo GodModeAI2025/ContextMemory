@@ -422,6 +422,31 @@ Wissen ohne Zeitbezug erzeugt Widersprüche. „Umsatz 28 Mrd." und „Umsatz 34
 
 Das verhindert, dass Claude alte und neue Zahlen durcheinanderbringt. Bei der Suche werden Treffer mit explizitem Zeitbezug bevorzugt, und bei Widersprüchen sieht man sofort, welcher Wert neuer ist.
 
+### Zeitgewichtung im Ranking
+
+Das Inhaltsjahr ist beim Ranking eine **harte Regel, keine Gewichtung**: Ein Node von 2025 steht nie über einem Node von 2026 — auch dann nicht, wenn er die Suchbegriffe viel häufiger trifft. Nur umgekehrt geht es. Ein bloßer Bonusfaktor würde das nicht garantieren, weil ein Keyword-Score von 25 jeden Bonus auf einen Score von 5 überholt.
+
+Innerhalb eines Jahres entscheidet wie bisher der Score, zusätzlich fließt das genaue Datum als Bonus ein (er halbiert sich alle 365 Tage) und bricht Gleichstände zugunsten des jüngeren Nodes. Wer nur Wissen aus dem laufenden Jahr gespeichert hat, sieht also dieselbe Reihenfolge wie vorher.
+
+| Frage | Antwort |
+|-------|---------|
+| Welches Datum zählt? | In dieser Reihenfolge das erste verwertbare: `source_date`, `valid_from`, `updated`, `created` |
+| Welche Formate? | `2025`, `2025-03`, `2025-03-17` und volle ISO-Zeitstempel. Freitext wie „Q1 2025“ zählt nicht als Datum |
+| Nodes ohne Datum? | Bleiben in den Ergebnissen, werden neutral gewichtet und stehen hinter allen datierten Nodes. `cm_add.py` setzt `created`/`updated` immer, betroffen sind also nur von Hand gebaute Indizes |
+| Datum in der Zukunft? | Wird wie „heute“ behandelt und kauft kein Extra-Gewicht |
+
+Widersprechen sich zwei Treffer — verknüpft über `supersedes`, `superseded_by` oder `contradicts` —, gewinnt der jüngere. Der ältere wird **nicht gelöscht**: Er bleibt im Ergebnis, rutscht aber hinter den neueren Node und wird als `outdated: outranked by [ID]` ausgewiesen. Stammen beide aus demselben Jahr, rutscht er direkt dahinter; bei verschiedenen Jahren sortiert ihn schon die harte Jahresregel nach unten.
+
+```
+1. ⚡ [les-004] KI-Adoption aktualisiert
+   🕐 2025-11-01 (temporal.source_date) | recency: 1.32
+2. ⚡ [les-003] KI-Adoption bei EVUs
+   🕐 2025-03-01 (temporal.source_date) | recency: 1.17
+   ⬇️  outdated: outranked by [les-004]
+```
+
+Die Zeitgewichtung ist mit `python3 context-memory/tests/test_recency.py` getestet (Standardbibliothek, keine Abhängigkeiten).
+
 Abgelaufene Gültigkeit wird beim Aufräumen erkannt: Aktive Nodes, deren „gültig bis“ in der Vergangenheit liegt, meldet `cm_cleanup.py` als abgelaufen — unabhängig davon, wann sie zuletzt bearbeitet wurden. Mit `--auto-mark` werden sie auf `outdated` gesetzt.
 
 ---

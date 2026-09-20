@@ -7,6 +7,10 @@ Multi-level search:
   2. Deep: full-text search in node content
   3. Assembly: combine and rank results
 
+Ranking is time-aware: newer knowledge outweighs older knowledge of the same
+quality, the content date breaks ties, and where two hits contradict each other
+the older one is listed below the newer one instead of being dropped.
+
 Usage:
   python3 cm_search.py --query "authentication" [--type architecture] [--limit 5]
 """
@@ -19,8 +23,21 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 from cm_core import (
     get_workspace, ensure_workspace, load_index, load_node,
+    content_date, content_year, recency_factor, sort_key_recency,
     VALID_TYPES
 )
+
+
+def _temporal_fields(meta: dict) -> dict:
+    """Ranking fields derived from the node's content date."""
+    dated, field = content_date(meta)
+    return {
+        "content_date": dated.date().isoformat() if dated else None,
+        "content_date_field": field,
+        "content_timestamp": dated.timestamp() if dated else None,
+        "content_year": dated.year if dated else None,
+        "recency": round(recency_factor(meta), 3)
+    }
 
 
 def quick_search(index: dict, query_words: set, node_type: str = None) -> list:
@@ -61,6 +78,10 @@ def quick_search(index: dict, query_words: set, node_type: str = None) -> list:
         relevance_boost = {"critical": 1.5, "high": 1.0, "medium": 0.5, "low": 0.0}
         score *= (1 + relevance_boost.get(meta.get("relevance", "medium"), 0) * 0.2)
 
+        # Recency: newer knowledge outweighs older knowledge of the same quality.
+        temporal = _temporal_fields(meta)
+        score *= temporal["recency"]
+
         if score > 0:
             results.append({
                 "id": nid,
@@ -70,10 +91,11 @@ def quick_search(index: dict, query_words: set, node_type: str = None) -> list:
                 "status": meta.get("status"),
                 "tags": meta.get("tags", []),
                 "score": round(score, 2),
-                "level": "quick"
+                "level": "quick",
+                **temporal
             })
 
-    return sorted(results, key=lambda x: x["score"], reverse=True)
+    return sorted(results, key=sort_key_recency)
 
 
 def deep_search(ws: Path, index: dict, query_words: set, exclude_ids: set, node_type: str = None) -> list:
@@ -109,6 +131,10 @@ def deep_search(ws: Path, index: dict, query_words: set, exclude_ids: set, node_
                     if pair in content_lower:
                         score += 2.0
 
+        # Recency: same weighting as in the quick search.
+        temporal = _temporal_fields(meta)
+        score *= temporal["recency"]
+
         if score > 0:
             # Extract a snippet around the first match
             snippet = _extract_snippet(content, query_words)
@@ -121,10 +147,11 @@ def deep_search(ws: Path, index: dict, query_words: set, exclude_ids: set, node_
                 "tags": meta.get("tags", []),
                 "score": round(score, 2),
                 "level": "deep",
-                "snippet": snippet
+                "snippet": snippet,
+                **temporal
             })
 
-    return sorted(results, key=lambda x: x["score"], reverse=True)
+    return sorted(results, key=sort_key_recency)
 
 
 def _extract_snippet(content: str, query_words: set, context_chars: int = 120) -> str:
@@ -154,7 +181,55 @@ def _extract_snippet(content: str, query_words: set, context_chars: int = 120) -
     return snippet
 
 
-def assemble_results(quick_results: list, deep_results: list, limit: int) -> list:
+def _outranking_pairs(ws: Path, dated: dict) -> dict:
+    """Map an outdated node ID to the newer node that outranks it.
+
+    `dated` maps every result ID to its content timestamp (or None). A pair
+    counts when both nodes are in the result set and a `supersedes`,
+    `superseded_by` or `contradicts` relation connects them. For `contradicts`
+    (symmetric) the content date decides: the younger statement wins, the older
+    one stays in the results but is listed below it.
+    """
+    relations_file = ws / "relations.json"
+    if not relations_file.exists():
+        return {}
+
+    try:
+        from cm_relate import load_relations
+    except ImportError:
+        return {}
+
+    losers = {}
+    for edge in load_relations(ws).get("edges", []):
+        source, target, relation = edge.get("from"), edge.get("to"), edge.get("relation")
+        if source not in dated or target not in dated:
+            continue
+        if relation == "supersedes":
+            losers[target] = source
+        elif relation == "superseded_by":
+            losers[source] = target
+        elif relation == "contradicts":
+            losers.setdefault(_older_of(source, target, dated), _newer_of(source, target, dated))
+    losers.pop(None, None)
+    return {loser: winner for loser, winner in losers.items() if loser != winner and winner}
+
+
+def _older_of(a: str, b: str, dated: dict):
+    """The node with the older content date; None if that cannot be decided."""
+    ts_a, ts_b = dated.get(a), dated.get(b)
+    if ts_a is None or ts_b is None or ts_a == ts_b:
+        return None
+    return a if ts_a < ts_b else b
+
+
+def _newer_of(a: str, b: str, dated: dict):
+    older = _older_of(a, b, dated)
+    if older is None:
+        return None
+    return b if older == a else a
+
+
+def assemble_results(quick_results: list, deep_results: list, limit: int, ws: Path = None) -> list:
     """Combine and deduplicate results from both search levels."""
     seen = set()
     combined = []
@@ -164,9 +239,56 @@ def assemble_results(quick_results: list, deep_results: list, limit: int) -> lis
             seen.add(r["id"])
             combined.append(r)
     
-    # Sort by score (quick results naturally score higher)
-    combined.sort(key=lambda x: x["score"], reverse=True)
+    # Sort by score, content date as tie-breaker (newer first)
+    combined.sort(key=sort_key_recency)
+
+    # Contradictions: the older statement stays, but never above the newer one.
+    if ws is not None:
+        dated = {r["id"]: r.get("content_timestamp") for r in combined}
+        losers = _outranking_pairs(ws, dated)
+        if losers:
+            years = {r["id"]: content_year(r) for r in combined}
+            for r in combined:
+                if r["id"] in losers:
+                    r["outranked_by"] = losers[r["id"]]
+            # Reordering is only needed inside a year. Across years the hard
+            # rule in sort_key_recency already puts the older node below the
+            # newer one — pulling it up behind its winner would lift it back
+            # above other, newer nodes.
+            same_year = {loser: winner for loser, winner in losers.items()
+                         if years.get(loser) is not None and years.get(loser) == years.get(winner)}
+            if same_year:
+                combined = _demote_outranked(combined, same_year)
+
     return combined[:limit]
+
+
+def _demote_outranked(results: list, losers: dict) -> list:
+    """Move every outdated node directly behind the node that outranks it."""
+    by_id = {r["id"]: r for r in results}
+    ordered = []
+    placed = set()
+
+    def place(result):
+        if result["id"] in placed:
+            return
+        placed.add(result["id"])
+        ordered.append(result)
+        # Pull in everything this node outranks, keeping the original order.
+        for candidate in results:
+            if losers.get(candidate["id"]) == result["id"]:
+                place(candidate)
+
+    for result in results:
+        if losers.get(result["id"]) in by_id:
+            continue  # placed right after its winner
+        place(result)
+
+    # Safety net: a cycle in the relations must not drop results.
+    for result in results:
+        place(result)
+
+    return ordered
 
 
 def main():
@@ -226,7 +348,7 @@ def main():
             print(f"   Deep search: {len(deep_results)} additional result(s)")
 
     # Assemble
-    results = assemble_results(quick_results, deep_results, args.limit)
+    results = assemble_results(quick_results, deep_results, args.limit, ws)
 
     if not results:
         print(f"📭 No results for '{args.query}'.")
@@ -249,6 +371,12 @@ def main():
         
         print(f"  {i}. {icon} [{r['id']}] {r['title']}")
         print(f"     {rel_icon} {r['type']} | {r['relevance']} | score: {r['score']}")
+        if r.get("content_date"):
+            print(f"     🕐 {r['content_date']} ({r['content_date_field']}) | recency: {r['recency']}")
+        else:
+            print(f"     🕐 no date — neutral weighting")
+        if r.get("outranked_by"):
+            print(f"     ⬇️  outdated: outranked by [{r['outranked_by']}]")
         if r.get("tags"):
             print(f"     🏷️  {', '.join(r['tags'])}")
         if r.get("snippet"):

@@ -28,6 +28,12 @@ VALID_CONFIDENCE = ["high", "medium", "low", "unknown"]
 VALID_STATUS = ["active", "outdated", "superseded"]
 VALID_TEMPORAL_CONFIDENCE = ["explicit", "inferred", "unknown"]
 
+# Recency weighting: how much a fresh node may gain over an ancient one, and how
+# fast that bonus decays. 365 days half-life means knowledge from last year still
+# counts, knowledge from 2020 is practically neutral.
+RECENCY_BOOST = 0.5
+RECENCY_HALF_LIFE_DAYS = 365.0
+
 
 def make_temporal(source_date: str = "", valid_from: str = "", valid_until: str = "",
                   temporal_confidence: str = "unknown") -> dict:
@@ -38,6 +44,101 @@ def make_temporal(source_date: str = "", valid_from: str = "", valid_until: str 
         "valid_until": valid_until,
         "temporal_confidence": temporal_confidence
     }
+
+
+def parse_partial_date(value: str) -> Optional[datetime]:
+    """Parse an ISO 8601 date, datetime or partial date (YYYY, YYYY-MM).
+
+    Partial values are anchored at their first moment (2025 → 2025-01-01).
+    Naive values are treated as UTC. Unparsable values like "Q1 2025" return None.
+    """
+    if not value:
+        return None
+    text = str(value).strip()
+    if re.fullmatch(r"\d{4}", text):
+        text = f"{text}-01-01"
+    elif re.fullmatch(r"\d{4}-\d{2}", text):
+        text = f"{text}-01"
+    try:
+        dt = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except (ValueError, TypeError):
+        return None
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+
+
+def content_date(meta: dict) -> tuple:
+    """Return (datetime, field) of the most meaningful date of a node.
+
+    The content date answers "how old is this knowledge?", not "when did I touch
+    the file?". Priority therefore: temporal.source_date (when it was published),
+    temporal.valid_from (since when it holds), updated, created.
+    Returns (None, "") if no field can be parsed — such nodes keep a neutral
+    weight instead of dropping out of the ranking.
+    """
+    temporal = meta.get("temporal") or {}
+    for field, value in (
+        ("temporal.source_date", temporal.get("source_date", "")),
+        ("temporal.valid_from", temporal.get("valid_from", "")),
+        ("updated", meta.get("updated", "")),
+        ("created", meta.get("created", "")),
+    ):
+        parsed = parse_partial_date(value)
+        if parsed:
+            return parsed, field
+    return None, ""
+
+
+def recency_factor(meta: dict, now: Optional[datetime] = None) -> float:
+    """Score multiplier between 1.0 and 1 + RECENCY_BOOST based on the content date.
+
+    Newer knowledge outweighs older knowledge; the boost halves every
+    RECENCY_HALF_LIFE_DAYS. Nodes without a usable date get the neutral 1.0, so
+    they never disappear but also never outrank dated knowledge of equal score.
+    A date in the future is capped at "today" and cannot buy extra weight.
+    """
+    dated, _field = content_date(meta)
+    if not dated:
+        return 1.0
+    now = now or datetime.now(timezone.utc)
+    age_days = max(0.0, (now - dated).total_seconds() / 86400.0)
+    return 1.0 + RECENCY_BOOST * (0.5 ** (age_days / RECENCY_HALF_LIFE_DAYS))
+
+
+def content_year(result: dict) -> Optional[int]:
+    """Calendar year of a search result's content date, or None if undated.
+
+    Reads the precomputed `content_year`, falls back to `content_timestamp` so
+    that results assembled by older code still rank correctly.
+    """
+    year = result.get("content_year")
+    if year is not None:
+        return int(year)
+    timestamp = result.get("content_timestamp")
+    if timestamp is None:
+        return None
+    return datetime.fromtimestamp(timestamp, timezone.utc).year
+
+
+def sort_key_recency(result: dict) -> tuple:
+    """Sort helper: content year first, then score, then date, then ID.
+
+    The year is a hard rule, not a weight: knowledge from an older year never
+    ranks above knowledge from a newer year, no matter how well the older node
+    matches the query. A multiplier alone cannot guarantee that — a keyword
+    score of 25 beats a score of 5 even with the maximum recency bonus.
+    Inside one year the score decides as before, so ranking within the current
+    year is unchanged. Nodes without a usable date come last but stay in the
+    result set.
+
+    Used as `sorted(..., key=sort_key_recency)` — the key is already ordered
+    ascending, so no `reverse=True` is needed.
+    """
+    year = content_year(result)
+    timestamp = result.get("content_timestamp")
+    return (-year if year is not None else float("inf"),
+            -float(result.get("score", 0.0)),
+            -(timestamp if timestamp is not None else float("-inf")),
+            str(result.get("id", "")))
 
 
 def get_workspace(project: Optional[str] = None, base: Optional[str] = None) -> Path:
