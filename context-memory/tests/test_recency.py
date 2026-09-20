@@ -12,7 +12,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from cm_core import content_date, parse_partial_date, recency_factor, sort_key_recency  # noqa: E402
+from cm_core import (content_date, content_year, parse_partial_date,  # noqa: E402
+                     recency_factor, sort_key_recency)
 from cm_search import assemble_results, quick_search  # noqa: E402
 
 NOW = datetime(2026, 9, 20, tzinfo=timezone.utc)
@@ -111,6 +112,38 @@ class RankingTest(unittest.TestCase):
         ordered = sorted([older, undated, newer], key=sort_key_recency)
         self.assertEqual([r["id"] for r in ordered], ["b", "a", "c"])
 
+    def test_older_year_never_outranks_newer_year(self):
+        """Hard rule: a high keyword score must not lift 2025 above 2026.
+
+        The old node matches title, every tag and the query repeatedly, the new
+        one barely at all. A multiplicative recency bonus alone would not be
+        enough here.
+        """
+        index = {"nodes": {
+            "les-001": node("authentication token rotation policy",
+                            ["authentication", "token", "rotation", "policy"],
+                            source_date="2025-01-15"),
+            "les-002": node("auth notes", ["authentication"], source_date="2026-08-01"),
+        }}
+        results = quick_search(index, {"authentication", "token", "rotation", "policy"})
+        self.assertEqual([r["id"] for r in results], ["les-002", "les-001"])
+        # The older node keeps its higher score, it just ranks below.
+        self.assertGreater(results[1]["score"], results[0]["score"])
+
+    def test_score_still_decides_inside_one_year(self):
+        index = {"nodes": {
+            "les-001": node("backup policy retention", ["backup", "policy"],
+                            source_date="2026-01-10"),
+            "les-002": node("misc notes", ["backup"], source_date="2026-08-01"),
+        }}
+        results = quick_search(index, {"backup", "policy"})
+        self.assertEqual([r["id"] for r in results], ["les-001", "les-002"])
+
+    def test_content_year_falls_back_to_timestamp(self):
+        ts = parse_partial_date("2025-06-01").timestamp()
+        self.assertEqual(content_year({"content_timestamp": ts}), 2025)
+        self.assertIsNone(content_year({"content_timestamp": None}))
+
     def test_undated_node_still_appears(self):
         index = {"nodes": {
             "les-001": node("Backup Policy", ["backup"], source_date="2026-08"),
@@ -163,6 +196,23 @@ class ContradictionTest(unittest.TestCase):
         results = self._search()
         self.assertEqual([r["id"] for r in results], ["les-002", "les-001"])
         self.assertEqual(results[1]["outranked_by"], "les-002")
+
+    def test_demotion_never_lifts_an_older_year_node(self):
+        """les-001 (2025) is superseded by les-002 (2026), les-003 is from 2026.
+
+        Moving the superseded node directly behind its winner must not pull it
+        above les-003 — the year rule outranks the relation.
+        """
+        self.index["nodes"]["les-001"]["title"] = "KI-Adoption KI Prozent"
+        self.index["nodes"]["les-003"] = node("Randnotiz", ["ki"], source_date="2026-02")
+        from cm_core import save_index
+        save_index(self.ws, self.index)
+        self.add_relation(self.ws, "les-002", "les-001", "supersedes")
+        results = self._search()
+        ids = [r["id"] for r in results]
+        self.assertEqual(ids[-1], "les-001")
+        self.assertLess(ids.index("les-003"), ids.index("les-001"))
+        self.assertEqual(results[-1]["outranked_by"], "les-002")
 
     def test_unrelated_relation_changes_nothing(self):
         self.add_relation(self.ws, "les-001", "les-002", "related_to")

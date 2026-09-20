@@ -23,7 +23,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 from cm_core import (
     get_workspace, ensure_workspace, load_index, load_node,
-    content_date, recency_factor, sort_key_recency,
+    content_date, content_year, recency_factor, sort_key_recency,
     VALID_TYPES
 )
 
@@ -35,6 +35,7 @@ def _temporal_fields(meta: dict) -> dict:
         "content_date": dated.date().isoformat() if dated else None,
         "content_date_field": field,
         "content_timestamp": dated.timestamp() if dated else None,
+        "content_year": dated.year if dated else None,
         "recency": round(recency_factor(meta), 3)
     }
 
@@ -246,10 +247,18 @@ def assemble_results(quick_results: list, deep_results: list, limit: int, ws: Pa
         dated = {r["id"]: r.get("content_timestamp") for r in combined}
         losers = _outranking_pairs(ws, dated)
         if losers:
+            years = {r["id"]: content_year(r) for r in combined}
             for r in combined:
                 if r["id"] in losers:
                     r["outranked_by"] = losers[r["id"]]
-            combined = _demote_outranked(combined, losers)
+            # Reordering is only needed inside a year. Across years the hard
+            # rule in sort_key_recency already puts the older node below the
+            # newer one — pulling it up behind its winner would lift it back
+            # above other, newer nodes.
+            same_year = {loser: winner for loser, winner in losers.items()
+                         if years.get(loser) is not None and years.get(loser) == years.get(winner)}
+            if same_year:
+                combined = _demote_outranked(combined, same_year)
 
     return combined[:limit]
 

@@ -424,16 +424,18 @@ Das verhindert, dass Claude alte und neue Zahlen durcheinanderbringt. Bei der Su
 
 ### Zeitgewichtung im Ranking
 
-Die Suche rechnet das Inhaltsdatum in den Score ein: Neueres Wissen wiegt schwerer als älteres, der Bonus halbiert sich alle 365 Tage. Bei gleichem Score entscheidet das Datum, der jüngere Node steht oben. Ein Node von 2025 verdrängt damit keinen Node von 2026 — nur umgekehrt.
+Das Inhaltsjahr ist beim Ranking eine **harte Regel, keine Gewichtung**: Ein Node von 2025 steht nie über einem Node von 2026 — auch dann nicht, wenn er die Suchbegriffe viel häufiger trifft. Nur umgekehrt geht es. Ein bloßer Bonusfaktor würde das nicht garantieren, weil ein Keyword-Score von 25 jeden Bonus auf einen Score von 5 überholt.
+
+Innerhalb eines Jahres entscheidet wie bisher der Score, zusätzlich fließt das genaue Datum als Bonus ein (er halbiert sich alle 365 Tage) und bricht Gleichstände zugunsten des jüngeren Nodes. Wer nur Wissen aus dem laufenden Jahr gespeichert hat, sieht also dieselbe Reihenfolge wie vorher.
 
 | Frage | Antwort |
 |-------|---------|
 | Welches Datum zählt? | In dieser Reihenfolge das erste verwertbare: `source_date`, `valid_from`, `updated`, `created` |
 | Welche Formate? | `2025`, `2025-03`, `2025-03-17` und volle ISO-Zeitstempel. Freitext wie „Q1 2025“ zählt nicht als Datum |
-| Nodes ohne Datum? | Bleiben in den Ergebnissen, werden neutral gewichtet und stehen bei gleichem Score hinter datierten Nodes |
+| Nodes ohne Datum? | Bleiben in den Ergebnissen, werden neutral gewichtet und stehen hinter allen datierten Nodes. `cm_add.py` setzt `created`/`updated` immer, betroffen sind also nur von Hand gebaute Indizes |
 | Datum in der Zukunft? | Wird wie „heute“ behandelt und kauft kein Extra-Gewicht |
 
-Widersprechen sich zwei Treffer — verknüpft über `supersedes`, `superseded_by` oder `contradicts` —, gewinnt der jüngere. Der ältere wird **nicht gelöscht**: Er bleibt im Ergebnis, rutscht aber direkt hinter den neueren Node und wird als `outdated: outranked by [ID]` ausgewiesen.
+Widersprechen sich zwei Treffer — verknüpft über `supersedes`, `superseded_by` oder `contradicts` —, gewinnt der jüngere. Der ältere wird **nicht gelöscht**: Er bleibt im Ergebnis, rutscht aber hinter den neueren Node und wird als `outdated: outranked by [ID]` ausgewiesen. Stammen beide aus demselben Jahr, rutscht er direkt dahinter; bei verschiedenen Jahren sortiert ihn schon die harte Jahresregel nach unten.
 
 ```
 1. ⚡ [les-004] KI-Adoption aktualisiert

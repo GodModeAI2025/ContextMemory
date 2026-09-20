@@ -104,14 +104,39 @@ def recency_factor(meta: dict, now: Optional[datetime] = None) -> float:
     return 1.0 + RECENCY_BOOST * (0.5 ** (age_days / RECENCY_HALF_LIFE_DAYS))
 
 
+def content_year(result: dict) -> Optional[int]:
+    """Calendar year of a search result's content date, or None if undated.
+
+    Reads the precomputed `content_year`, falls back to `content_timestamp` so
+    that results assembled by older code still rank correctly.
+    """
+    year = result.get("content_year")
+    if year is not None:
+        return int(year)
+    timestamp = result.get("content_timestamp")
+    if timestamp is None:
+        return None
+    return datetime.fromtimestamp(timestamp, timezone.utc).year
+
+
 def sort_key_recency(result: dict) -> tuple:
-    """Sort helper: score first, content date as tie-breaker, ID as last resort.
+    """Sort helper: content year first, then score, then date, then ID.
+
+    The year is a hard rule, not a weight: knowledge from an older year never
+    ranks above knowledge from a newer year, no matter how well the older node
+    matches the query. A multiplier alone cannot guarantee that — a keyword
+    score of 25 beats a score of 5 even with the maximum recency bonus.
+    Inside one year the score decides as before, so ranking within the current
+    year is unchanged. Nodes without a usable date come last but stay in the
+    result set.
 
     Used as `sorted(..., key=sort_key_recency)` — the key is already ordered
     ascending, so no `reverse=True` is needed.
     """
+    year = content_year(result)
     timestamp = result.get("content_timestamp")
-    return (-float(result.get("score", 0.0)),
+    return (-year if year is not None else float("inf"),
+            -float(result.get("score", 0.0)),
             -(timestamp if timestamp is not None else float("-inf")),
             str(result.get("id", "")))
 
